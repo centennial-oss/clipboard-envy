@@ -2,7 +2,7 @@
 
 A lightweight, open-source macOS Menu Bar-only app for quickly stashing and managing plaintext snippets via the clipboard.
 
-SnipStash is [available in the App Store ](https://apps.apple.com/us/app/snipstash/id6759918875) or can be downloaded directly from [this project's releases](github.com/centennial-oss/snipstash/releases).
+SnipStash is [available in the App Store ](https://apps.apple.com/us/app/snipstash/id6759918875) or can be downloaded directly from [this project's releases](https://github.com/centennial-oss/snipstash/releases).
 
 ## Purpose
 
