@@ -50,6 +50,25 @@ SnipStash does not collect, send, or share your data. Everything stays on your M
 - macOS 14 or higher
 - Xcode (for building locally)
 
+## Configuration
+
+Some options are controlled via macOS defaults (no settings UI). After changing them, restart SnipStash.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `Argon2MemoryKiB` | 65535 | Memory cost in KiB for **Encode & Hash → Argon2id Hash**. |
+| `Argon2Iterations` | 3 | Time cost (iterations) for Argon2id. |
+| `Argon2Parallelism` | 1 | Parallelism (lanes) for Argon2id. |
+
+**Examples (run in Terminal):**
+
+```bash
+defaults read org.centennialoss.snipstash                    # show current values
+defaults write org.centennialoss.snipstash Argon2MemoryKiB 65535
+defaults write org.centennialoss.snipstash Argon2Iterations 3
+defaults write org.centennialoss.snipstash Argon2Parallelism 1
+```
+
 ## Building
 
 1. Open `SnipStash.xcodeproj` in Xcode

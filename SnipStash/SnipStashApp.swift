@@ -23,6 +23,19 @@ struct SnipStashApp: App {
 
     init() {
         _snippetsStore = StateObject(wrappedValue: SnippetsStore(container: Self.sharedModelContainer))
+        Self.registerArgon2Defaults()
+    }
+
+    /// Register default Argon2id parameters. Override via:
+    ///   defaults write org.centennialoss.snipstash Argon2MemoryKiB 65535
+    ///   defaults write org.centennialoss.snipstash Argon2Iterations 3
+    ///   defaults write org.centennialoss.snipstash Argon2Parallelism 1
+    private static func registerArgon2Defaults() {
+        UserDefaults.standard.register(defaults: [
+            "Argon2MemoryKiB": 65535,
+            "Argon2Iterations": 3,
+            "Argon2Parallelism": 1,
+        ])
     }
 
     var body: some Scene {

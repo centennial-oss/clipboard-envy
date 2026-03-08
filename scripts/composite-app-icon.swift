@@ -30,10 +30,11 @@ guard let bgImage = NSImage(contentsOfFile: bgPath),
     exit(1)
 }
 
-// Background is 1024x1024; transparent foreground is 768x768, drawn centered (no scaling of foreground to fill).
+// Background is 1024x1024; transparent foreground is upscaled to 840x840 and drawn centered with y offset 20px above center.
 let bgWidth = 1024.0
 let bgHeight = 1024.0
-let fgSize = 768.0
+let fgSize = 860.0
+let fgYOffsetAboveCenter = 20.0
 let width = Int(bgWidth)
 let height = Int(bgHeight)
 
@@ -45,10 +46,10 @@ guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixel
 NSGraphicsContext.saveGraphicsState()
 NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
 
-// Draw background at full 1024x1024, then foreground at 768x768 centered (foreground stays 768x768).
+// Draw background at full 1024x1024, then foreground at 840x840 centered horizontally, 20px above center vertically.
 let bgRect = NSRect(x: 0, y: 0, width: bgWidth, height: bgHeight)
 let fgDestX = (bgWidth - fgSize) / 2
-let fgDestY = (bgHeight - fgSize) / 2
+let fgDestY = (bgHeight - fgSize) / 2 + fgYOffsetAboveCenter
 let fgDestRect = NSRect(x: fgDestX, y: fgDestY, width: fgSize, height: fgSize)
 let fgSrcRect = NSRect(x: 0, y: 0, width: fgImage.size.width, height: fgImage.size.height)
 bgImage.draw(in: bgRect)

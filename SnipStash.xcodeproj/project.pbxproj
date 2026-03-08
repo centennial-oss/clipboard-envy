@@ -6,9 +6,24 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D34C88D42F5DFA4A00B4F94E /* argon2 in Frameworks */ = {isa = PBXBuildFile; productRef = D39E00022F54F000005FAE7B /* argon2 */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D36T000A2F55000000720950 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D3606AD62F5238EF00720950 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3606ADD2F5238EF00720950;
+			remoteInfo = SnipStash;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		D3606ADE2F5238EF00720950 /* SnipStash.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SnipStash.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3606AE12F5238F100720950 /* SnipStash/Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = SnipStash/Version.xcconfig; sourceTree = SOURCE_ROOT; };
+		D36T00012F55000000720950 /* SnipStashTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SnipStashTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -17,10 +32,23 @@
 			path = SnipStash;
 			sourceTree = "<group>";
 		};
+		D36T00022F55000000720950 /* SnipStashTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SnipStashTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		D3606ADB2F5238EF00720950 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D34C88D42F5DFA4A00B4F94E /* argon2 in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D36T00042F55000000720950 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -34,6 +62,7 @@
 			isa = PBXGroup;
 			children = (
 				D3606AE02F5238EF00720950 /* SnipStash */,
+				D36T00022F55000000720950 /* SnipStashTests */,
 				D3606ADF2F5238EF00720950 /* Products */,
 				D39CE0092F54E833005FAE7B /* Recovered References */,
 			);
@@ -43,6 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				D3606ADE2F5238EF00720950 /* SnipStash.app */,
+				D36T00012F55000000720950 /* SnipStashTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -77,10 +107,34 @@
 			);
 			name = SnipStash;
 			packageProductDependencies = (
+				D39E00022F54F000005FAE7B /* argon2 */,
 			);
 			productName = SnipStash;
 			productReference = D3606ADE2F5238EF00720950 /* SnipStash.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D36T00052F55000000720950 /* SnipStashTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D36T00062F55000000720950 /* Build configuration list for PBXNativeTarget "SnipStashTests" */;
+			buildPhases = (
+				D36T00072F55000000720950 /* Sources */,
+				D36T00042F55000000720950 /* Frameworks */,
+				D36T00082F55000000720950 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D36T00092F55000000720950 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D36T00022F55000000720950 /* SnipStashTests */,
+			);
+			name = SnipStashTests;
+			packageProductDependencies = (
+			);
+			productName = SnipStashTests;
+			productReference = D36T00012F55000000720950 /* SnipStashTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -106,18 +160,29 @@
 			);
 			mainGroup = D3606AD52F5238EF00720950;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D39E00012F54F000005FAE7B /* XCRemoteSwiftPackageReference "phc-winner-argon2" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D3606ADF2F5238EF00720950 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				D3606ADD2F5238EF00720950 /* SnipStash */,
+				D36T00052F55000000720950 /* SnipStashTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		D3606ADC2F5238EF00720950 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D36T00082F55000000720950 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -175,7 +240,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D36T00072F55000000720950 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D36T00092F55000000720950 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3606ADD2F5238EF00720950 /* SnipStash */;
+			targetProxy = D36T000A2F55000000720950 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		D3606AE92F5238F000720950 /* Debug */ = {
@@ -305,7 +385,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 86G4NP75W9;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -327,7 +407,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.centennialoss.snipstash;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -350,7 +430,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 86G4NP75W9;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -372,7 +452,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.centennialoss.snipstash;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -383,6 +463,42 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		D36T000B2F55000000720950 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/SnipStash.app/Contents/MacOS/SnipStash";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 86G4NP75W9;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.centennialoss.snipstash.SnipStashTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUNDLE_LOADER)";
+			};
+			name = Debug;
+		};
+		D36T000C2F55000000720950 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/SnipStash.app/Contents/MacOS/SnipStash";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 86G4NP75W9;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.centennialoss.snipstash.SnipStashTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUNDLE_LOADER)";
 			};
 			name = Release;
 		};
@@ -407,7 +523,35 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		D36T00062F55000000720950 /* Build configuration list for PBXNativeTarget "SnipStashTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D36T000B2F55000000720950 /* Debug */,
+				D36T000C2F55000000720950 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		D39E00012F54F000005FAE7B /* XCRemoteSwiftPackageReference "phc-winner-argon2" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/P-H-C/phc-winner-argon2.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D39E00022F54F000005FAE7B /* argon2 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D39E00012F54F000005FAE7B /* XCRemoteSwiftPackageReference "phc-winner-argon2" */;
+			productName = argon2;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D3606AD62F5238EF00720950 /* Project object */;
 }

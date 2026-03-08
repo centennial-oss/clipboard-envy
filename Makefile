@@ -1,4 +1,4 @@
-.PHONY: build build-release generate-appicons
+.PHONY: build build-release generate-appicons test
 
 # App icon pipeline:
 #   1. Composite assets/app-icon-large-transparent.png over assets/app-icon-background-large.png → assets/app-icon-large.png
@@ -34,6 +34,11 @@ build-release:
 	fi
 	xcodebuild -scheme SnipStash -configuration Release -derivedDataPath dist/DerivedData build
 	cp -R dist/DerivedData/Build/Products/Release/SnipStash.app dist/
+
+# Run Swift tests.
+test:
+	mkdir -p build
+	xcodebuild test -scheme SnipStash -configuration Debug -derivedDataPath build/DerivedData -destination 'platform=macOS'
 
 # Generate app icon: composite transparent onto background → app-icon-large.png; copy to AppIcon_1024; then resize.
 # Composite uses Swift script (no extra deps on macOS). 16 and 32: center-crop then resize; 64,128,256,512: resize only.

@@ -55,7 +55,7 @@ struct MenuBarView: View {
                 NSApp.activate(ignoringOtherApps: true)
             }
         }
-        Button("Capture Snippet From Clipboard", action: quickSaveFromClipboard)
+        Button("New Snippet From Clipboard", action: quickSaveFromClipboard)
         Button("Analyze Clipboard Data") {
             if let str = ClipboardIO.readString() {
                 editorStore.initialBody = str
@@ -70,38 +70,75 @@ struct MenuBarView: View {
         }
         Menu("Transform Clipboard Data") {
             Menu("Casing & Spacing") {
-                Button("Lowercase") { transformClipboard(ClipboardTransform.lowercase) }
-                Button("Uppercase") { transformClipboard(ClipboardTransform.uppercase) }
+                Button("UPPERCASE") { transformClipboard(ClipboardTransform.uppercase) }
+                Button("lowercase") { transformClipboard(ClipboardTransform.lowercase) }
                 Button("Trimmed") { transformClipboard(ClipboardTransform.trimmed) }
-                Button("LCase + Trimmed") { transformClipboard(ClipboardTransform.lowercaseTrimmed) }
+                Button("Trimmed lowercase") { transformClipboard(ClipboardTransform.lowercaseTrimmed) }
+                Divider()
+                Button("Title Case") { transformClipboard(ClipboardTransform.titleCase) }
+                Button("Sentence case") { transformClipboard(ClipboardTransform.sentenceCase) }
+                Divider()
+                Button("camelCase") { transformClipboard(ClipboardTransform.camelCase) }
+                Button("PascalCase") { transformClipboard(ClipboardTransform.pascalCase) }
+                Button("kebab-case (slug)") { transformClipboard(ClipboardTransform.slugify) }
+                Button("snake_case") { transformClipboard(ClipboardTransform.snakeCase) }
+                Button("CONST_CASE") { transformClipboard(ClipboardTransform.constCase) }
             }
             Menu("URLs") {
-                Button("Host") { transformClipboardIfValid(ClipboardTransform.urlExtractHostIfValid) }
+                Button("Host (Domain)") { transformClipboardIfValid(ClipboardTransform.urlExtractHostIfValid) }
+                Button("Host[:Port]") { transformClipboardIfValid(ClipboardTransform.urlExtractHostPortIfValid) }
+                Button("Port") { transformClipboardIfValid(ClipboardTransform.urlExtractPortIfValid) }
                 Button("Path") { transformClipboardIfValid(ClipboardTransform.urlExtractPathIfValid) }
                 Button("Params") { transformClipboardIfValid(ClipboardTransform.urlExtractQueryIfValid) }
                 Button("Hash") { transformClipboardIfValid(ClipboardTransform.urlExtractFragmentIfValid) }
+                Divider()
                 Button("Strip URL Params") { transformClipboardIfValid(ClipboardTransform.stripUrlParamsIfValid) }
                 Button("URL-encode") { transformClipboard(ClipboardTransform.urlEncode) }
                 Button("URL-decode") { transformClipboard(ClipboardTransform.urlDecode) }
-                Button("Slugify") { transformClipboard(ClipboardTransform.slugify) }
             }
             Menu("Encode & Hash") {
                 Button("Base64 Encode") { transformClipboard(ClipboardTransform.base64Encode) }
                 Button("Base64 Decode") { transformClipboard(ClipboardTransform.base64Decode) }
+                Button("Base64URL Encode") { transformClipboard(ClipboardTransform.base64URLEncode) }
+                Button("Base64URL Decode") { transformClipboard(ClipboardTransform.base64URLDecode) }
+                Divider()
+                Button("JWT Decode") { transformClipboardIfValid(ClipboardTransform.jwtDecode) }
+                Divider()
                 Button("MD5 Checksum") { transformClipboard(ClipboardTransform.md5Checksum) }
-                Button("SHA1 Checksum") { transformClipboard(ClipboardTransform.sha1Checksum) }
-                Button("SHA256 Checksum") { transformClipboard(ClipboardTransform.sha256Checksum) }
+                Button("SHA-1 Checksum") { transformClipboard(ClipboardTransform.sha1Checksum) }
+                Button("SHA-256 Checksum") { transformClipboard(ClipboardTransform.sha256Checksum) }
+                Button("SHA-512 Checksum") { transformClipboard(ClipboardTransform.sha512Checksum) }
+                Button("CRC32 Checksum") { transformClipboard(ClipboardTransform.crc32) }
+                Divider()
+                Button("Argon2id Hash") { transformClipboardIfValid(ClipboardTransform.argon2idHash) }
+                Button("bcrypt Hash") { transformClipboardIfValid(ClipboardTransform.bcryptHash) }
             }
             Menu("Structured Data") {
                 Button("JSON Prettify") { transformClipboard(ClipboardTransform.jsonPrettify) }
                 Button("JSON Minify") { transformClipboard(ClipboardTransform.jsonMinify) }
+                Button("Sort JSON Keys") { transformClipboard(ClipboardTransform.jsonSortKeys) }
+                Divider()
+                Button("YAML Prettify") { transformClipboard(ClipboardTransform.yamlPrettify) }
+                Button("YAML Minify") { transformClipboard(ClipboardTransform.yamlMinify) }
+                Divider()
+                Button("JSON → YAML") { transformClipboardIfValid(ClipboardTransform.jsonToYaml) }
+                Button("YAML → JSON") { transformClipboardIfValid(ClipboardTransform.yamlToJson) }
+                Divider()
+                Button("JSON Array → CSV") { transformClipboardIfValid(ClipboardTransform.jsonArrayToCsv) }
                 Button("CSV → TSV") { transformClipboard(ClipboardTransform.csvToTsv) }
+                Button("CSV → JSON") { transformClipboardIfValid(ClipboardTransform.csvToJson) }
             }
             Menu("Multi-line Data") {
                 Button("Sort Lines") { transformClipboard(ClipboardTransform.sortLines) }
                 Button("Deduplicate Lines") { transformClipboard(ClipboardTransform.deduplicateLines) }
                 Button("Sort + Dedupe Lines") { transformClipboard(ClipboardTransform.sortAndDeduplicateLines) }
+                Button("Remove Empty Lines") { transformClipboard(ClipboardTransform.removeEmptyLines) }
                 Button("Reverse Lines") { transformClipboard(ClipboardTransform.reverseLines) }
+                Button("Shuffle Lines") { transformClipboard(ClipboardTransform.shuffleLines) }
+                Divider()
+                Button("Indent Lines") { transformClipboard(ClipboardTransform.indentLines) }
+                Button("Un-indent Lines") { transformClipboard(ClipboardTransform.unindentLines) }
+                Button("Trim Lines") { transformClipboard(ClipboardTransform.trimLines) }
                 Divider()
                 Button("CRLF → LF (strip \\r)") { transformClipboard(ClipboardTransform.windowsNewlinesToUnix) }
             }
@@ -117,6 +154,9 @@ struct MenuBarView: View {
                 Divider()
                 Button("Escape $") { transformClipboard(ClipboardTransform.escapeDollar) }
                 Button("Unescape $") { transformClipboard(ClipboardTransform.unescapeDollar) }
+                Divider()
+                Button("HTML Escape") { transformClipboard(ClipboardTransform.htmlEscape) }
+                Button("HTML Unescape") { transformClipboard(ClipboardTransform.htmlUnescape) }
                 #if DEBUG
                 Divider()
                 Button(useDemoSnippets ? "Turn Demo Menu Off" : "Turn Demo Menu On") {
@@ -126,16 +166,108 @@ struct MenuBarView: View {
             }
         }
         Menu("Set Clipboard Data") {
-            Button("Current Epoch Time (s)") { setClipboardToEpochSeconds() }
-            Button("Current Epoch Time (ms)") { setClipboardToEpochMilliseconds() }
-            Button("Current SQL DateTime (Local)") { setClipboardToSQLDateTimeLocal() }
-            Button("Current SQL DateTime (UTC)") { setClipboardToSQLDateTimeUTC() }
-            Button("Current RFC3339 Time (Z)") { setClipboardToRFC3339Z() }
-            Button("Current RFC3339 (+offset)") { setClipboardToRFC3339WithOffset() }
-            Button("Current RFC3339 (tz abbrev)") { setClipboardToRFC3339WithAbbreviation() }
-            Divider()
-            Button("Random UUID (Lowercase)") { setClipboardToRandomUUIDLowercase() }
-            Button("Random UUID (Uppercase)") { setClipboardToRandomUUID() }
+            Menu("Time") {
+                Button("Epoch (s)") { setClipboardToEpochSeconds() }
+                Button("Epoch (ms)") { setClipboardToEpochMilliseconds() }
+                Button("SQL DateTime (Local)") { setClipboardToSQLDateTimeLocal() }
+                Button("SQL DateTime (UTC)") { setClipboardToSQLDateTimeUTC() }
+                Button("RFC3339 (Z)") { setClipboardToRFC3339Z() }
+                Button("RFC3339 (+offset)") { setClipboardToRFC3339WithOffset() }
+                Button("RFC3339 (tz abbrev)") { setClipboardToRFC3339WithAbbreviation() }
+            }
+            Menu("Symbol") {
+                Menu("Typography") {
+                    Button("Em dash —") { setClipboardTo("—") }
+                    Button("En dash –") { setClipboardTo("–") }
+                    Button("Ellipsis …") { setClipboardTo("…") }
+                }
+                Menu("Shapes") {
+                    Button("Check mark ✓") { setClipboardTo("✓") }
+                    Button("Middle dot ·") { setClipboardTo("·") }
+                    Button("Bullet •") { setClipboardTo("•") }
+                    Button("Open Bullet ◦") { setClipboardTo("◦") }
+                    Button("Circle ●") { setClipboardTo("●") }
+                    Button("Open Circle ○") { setClipboardTo("○") }
+                    Button("Square Bullet ▪") { setClipboardTo("▪") }
+                    Button("Open Square ▫") { setClipboardTo("▫") }
+                    Button("Small Triangle Bullet ▸") { setClipboardTo("▸") }
+                    Button("Triangle Bullet ▶") { setClipboardTo("▶") }
+                    Button("Diamond Bullet ◆") { setClipboardTo("◆") }
+                    Button("Black star ★") { setClipboardTo("★") }
+                    Button("White star ☆") { setClipboardTo("☆") }
+                }
+                Menu("Math") {
+                    Button("Squared ²") { setClipboardTo("²") }
+                    Button("Cubed ³") { setClipboardTo("³") }
+                    Button("Subscript 2 ₂") { setClipboardTo("₂") }
+                    Button("Subscript 3 ₃") { setClipboardTo("₃") }
+                    Divider()
+                    Button("Plus-minus ±") { setClipboardTo("±") }
+                    Button("Multiply ×") { setClipboardTo("×") }
+                    Button("Divide ÷") { setClipboardTo("÷") }
+                    Divider()
+                    Button("Not equal ≠") { setClipboardTo("≠") }
+                    Button("Approximately ≈") { setClipboardTo("≈") }
+                    Button("Less-or-equal ≤") { setClipboardTo("≤") }
+                    Button("Greater-or-equal ≥") { setClipboardTo("≥") }
+                    Divider()
+                    Button("Infinity ∞") { setClipboardTo("∞") }
+                }
+                Menu("Legal") {
+                    Button("Copyright ©") { setClipboardTo("©") }
+                    Button("Registered ®") { setClipboardTo("®") }
+                    Button("Trademark ™") { setClipboardTo("™") }
+                    Button("Section §") { setClipboardTo("§") }
+                }
+                Menu("Whitespace") {
+                    Button("Tab character") { setClipboardTo("\t") }
+                    Button("Non-breaking space") { setClipboardTo("\u{00A0}") }
+                    Button("Pilcrow (paragraph) ¶") { setClipboardTo("¶") }
+                }
+                Menu("Arrows") {
+                    Button("Right arrow →") { setClipboardTo("→") }
+                    Button("Left arrow ←") { setClipboardTo("←") }
+                    Button("Up arrow ↑") { setClipboardTo("↑") }
+                    Button("Down arrow ↓") { setClipboardTo("↓") }
+                    Button("Right double arrow ⇒") { setClipboardTo("⇒") }
+                    Button("Left double arrow ⇐") { setClipboardTo("⇐") }
+                }
+                Menu("Units") {
+                    Button("Degrees °") { setClipboardTo("°") }
+                    Button("Micro µ") { setClipboardTo("µ") }
+                    Button("Per mille ‰") { setClipboardTo("‰") }
+                    Button("Basis points ‱") { setClipboardTo("‱") }
+                    Divider()
+                    Button("Euro €") { setClipboardTo("€") }
+                    Button("Pound £") { setClipboardTo("£") }
+                    Button("Yen ¥") { setClipboardTo("¥") }
+                    Button("Cent ¢") { setClipboardTo("¢") }
+                }
+            }
+            Menu("Random") {
+                Button("UUID (Lowercase)") { setClipboardToRandomUUIDLowercase() }
+                Button("UUID (Uppercase)") { setClipboardToRandomUUID() }
+                Divider()
+                Button("Hex String (16 bytes)") { setClipboardToRandomHex(byteCount: 16) }
+                Button("Hex String (32 bytes)") { setClipboardToRandomHex(byteCount: 32) }
+                Divider()
+                Button("ULID") { setClipboardToRandomULID() }
+                Button("NanoID") { setClipboardToRandomNanoID() }
+                Divider()
+                Button("Very Complex Password") { setClipboardToRandomVeryComplexPassword() }
+                Button("Complex Password") { setClipboardToRandomComplexPassword() }
+                Button("Alphanumeric Password") { setClipboardToRandomAlphanumericPassword() }
+            }
+            Menu("Filler") {
+                Button("Lorem Ipsum (Short)") { setClipboardTo(ClipboardSet.loremIpsumPlaceholderShort) }
+                Button("Lorem Ipsum (Medium)") { setClipboardTo(ClipboardSet.loremIpsumPlaceholderMedium) }
+                Button("Lorem Ipsum (Full)") { setClipboardTo(ClipboardSet.loremIpsumPlaceholderFull) }
+                Button("The Quick Brown Fox") { setClipboardTo(ClipboardSet.quickBrownFoxPlaceholder) }
+                Button("Pack My Box") { setClipboardTo(ClipboardSet.packMyBoxPlaceholder) }
+                Button("Sphinx of Black Quartz") { setClipboardTo(ClipboardSet.sphinxOfBlackQuartzPlaceholder) }
+                Button("Waltz, Bad Nymph") { setClipboardTo(ClipboardSet.waltzBadNymphPlaceholder) }
+                Button("Jackdaws") { setClipboardTo(ClipboardSet.jackdawsPlaceholder) }
+            }
         }
         Divider()
         if displayedSnippets.isEmpty {
@@ -235,6 +367,53 @@ struct MenuBarView: View {
     }
     private func setClipboardToRandomUUIDLowercase() {
         ClipboardSet.setAndNotify(ClipboardSet.randomUUIDLowercase(), muted: muteSounds)
+    }
+
+    private func setClipboardToRandomHex(byteCount: Int) {
+        if let s = ClipboardSet.randomHexString(byteCount: byteCount) {
+            ClipboardSet.setAndNotify(s, muted: muteSounds)
+        } else {
+            ClipboardSound.playClipboardError(muted: muteSounds)
+        }
+    }
+    private func setClipboardToRandomULID() {
+        if let s = ClipboardSet.randomULID() {
+            ClipboardSet.setAndNotify(s, muted: muteSounds)
+        } else {
+            ClipboardSound.playClipboardError(muted: muteSounds)
+        }
+    }
+    private func setClipboardToRandomNanoID() {
+        if let s = ClipboardSet.randomNanoID() {
+            ClipboardSet.setAndNotify(s, muted: muteSounds)
+        } else {
+            ClipboardSound.playClipboardError(muted: muteSounds)
+        }
+    }
+    private func setClipboardToRandomVeryComplexPassword() {
+        if let s = ClipboardSet.randomVeryComplexPassword() {
+            ClipboardSet.setAndNotify(s, muted: muteSounds)
+        } else {
+            ClipboardSound.playClipboardError(muted: muteSounds)
+        }
+    }
+    private func setClipboardToRandomComplexPassword() {
+        if let s = ClipboardSet.randomComplexPassword() {
+            ClipboardSet.setAndNotify(s, muted: muteSounds)
+        } else {
+            ClipboardSound.playClipboardError(muted: muteSounds)
+        }
+    }
+    private func setClipboardToRandomAlphanumericPassword() {
+        if let s = ClipboardSet.randomAlphanumericPassword() {
+            ClipboardSet.setAndNotify(s, muted: muteSounds)
+        } else {
+            ClipboardSound.playClipboardError(muted: muteSounds)
+        }
+    }
+
+    private func setClipboardTo(_ string: String) {
+        ClipboardSet.setAndNotify(string, muted: muteSounds)
     }
 
     private func confirmAndDelete(_ snippet: Snippet) {
