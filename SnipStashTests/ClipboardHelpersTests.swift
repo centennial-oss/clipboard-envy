@@ -301,6 +301,39 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertTrue(tsv.contains("\t"))
     }
 
+    func testMysqlCliTableToCsv() {
+        let input = """
+        Some noise before the table
+        mysql> SELECT * FROM something;
+
+        +--------------------------------+---------------+------------------------------+--------------+
+        | GRANTEE                        | TABLE_CATALOG | PRIVILEGE_TYPE               | IS_GRANTABLE |
+        +--------------------------------+---------------+------------------------------+--------------+
+        | 'rdsadmin'@'localhost'         | def           | SELECT                       | YES          |
+        | 'rdsadmin'@'localhost'         | def           | INSERT                       | YES          |
+        +--------------------------------+---------------+------------------------------+--------------+
+
+        2 rows in set (0.00 sec)
+        """
+
+        let expected = """
+        GRANTEE,TABLE_CATALOG,PRIVILEGE_TYPE,IS_GRANTABLE
+        'rdsadmin'@'localhost',def,SELECT,YES
+        'rdsadmin'@'localhost',def,INSERT,YES
+        """
+
+        XCTAssertEqual(ClipboardTransform.mysqlCliTableToCsv(input), expected)
+    }
+
+    func testMysqlCliTableToCsv_invalidInputReturnsNil() {
+        let input = """
+        not a mysql cli table
+        | header | row |
+        """
+
+        XCTAssertNil(ClipboardTransform.mysqlCliTableToCsv(input))
+    }
+
     // MARK: - Quote escaping
 
     func testEscapeUnescapeDoubleQuotes() {

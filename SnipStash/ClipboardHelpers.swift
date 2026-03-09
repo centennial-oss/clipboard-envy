@@ -498,6 +498,40 @@ enum ClipboardTransform {
         return ([headerLine] + dataLines).joined(separator: "\n")
     }
 
+    /// Convert MySQL CLI table output to CSV. Ignores any text before the first table border
+    /// and after the last table border.
+    nonisolated static func mysqlCliTableToCsv(_ s: String) -> String? {
+        let lines = windowsNewlinesToUnix(s).components(separatedBy: .newlines)
+        let borderIndices = lines.indices.filter { isMySQLCliTableBorder(lines[$0]) }
+        guard let firstBorder = borderIndices.first,
+              let lastBorder = borderIndices.last,
+              firstBorder < lastBorder else { return nil }
+
+        let tableLines = lines[firstBorder...lastBorder]
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard tableLines.allSatisfy({ isMySQLCliTableBorder($0) || isMySQLCliTableRow($0) }) else { return nil }
+
+        let rows = tableLines
+            .filter(isMySQLCliTableRow)
+            .map(parseMySQLCliTableRow)
+
+        guard let headers = rows.first, !headers.isEmpty, rows.count >= 2 else { return nil }
+        guard rows.allSatisfy({ $0.count == headers.count }) else { return nil }
+
+        func escapeCSV(_ value: String) -> String {
+            if value.contains(",") || value.contains("\"") || value.contains("\n") {
+                return "\"" + value.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+            }
+            return value
+        }
+
+        return rows.map { row in
+            row.map(escapeCSV).joined(separator: ",")
+        }.joined(separator: "\n")
+    }
+
     // MARK: - Quote escaping
 
     nonisolated static func escapeDoubleQuotes(_ s: String) -> String {
@@ -547,6 +581,26 @@ enum ClipboardTransform {
     /// Parse CSV into rows of fields (handles quoted fields).
     nonisolated static func parseCSVRows(_ s: String) -> [[String]] {
         s.components(separatedBy: .newlines).map(parseCSVLine)
+    }
+
+    private nonisolated static func isMySQLCliTableBorder(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.hasPrefix("+"), trimmed.hasSuffix("+") else { return false }
+        let body = trimmed.dropFirst().dropLast()
+        guard !body.isEmpty else { return false }
+        return body.contains("+") && body.allSatisfy { $0 == "+" || $0 == "-" }
+    }
+
+    private nonisolated static func isMySQLCliTableRow(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.hasPrefix("|") && trimmed.hasSuffix("|")
+    }
+
+    private nonisolated static func parseMySQLCliTableRow(_ line: String) -> [String] {
+        let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = trimmed.split(separator: "|", omittingEmptySubsequences: false)
+        guard parts.count >= 3 else { return [] }
+        return parts.dropFirst().dropLast().map { $0.trimmingCharacters(in: .whitespaces) }
     }
 
     nonisolated static func parseCSVLine(_ line: String) -> [String] {

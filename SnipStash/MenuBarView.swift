@@ -127,6 +127,9 @@ struct MenuBarView: View {
                 Button("JSON Array → CSV") { transformClipboardIfValid(ClipboardTransform.jsonArrayToCsv) }
                 Button("CSV → TSV") { transformClipboard(ClipboardTransform.csvToTsv) }
                 Button("CSV → JSON") { transformClipboardIfValid(ClipboardTransform.csvToJson) }
+                Divider()
+                Button("MySQL CLI Table → CSV") { transformClipboardIfValid(ClipboardTransform.mysqlCliTableToCsv) }
+                Button("psql Table → CSV") { transformClipboardIfValid(ClipboardTransform.mysqlCliTableToCsv) }
             }
             Menu("Multi-line Data") {
                 Button("Sort Lines") { transformClipboard(ClipboardTransform.sortLines) }
