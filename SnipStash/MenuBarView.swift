@@ -69,7 +69,7 @@ struct MenuBarView: View {
             }
         }
         Menu("Transform Clipboard Data") {
-            Menu("Casing & Spacing") {
+            Menu("General Text") {
                 Button("UPPERCASE") { transformClipboard(ClipboardTransform.uppercase) }
                 Button("lowercase") { transformClipboard(ClipboardTransform.lowercase) }
                 Button("Trimmed") { transformClipboard(ClipboardTransform.trimmed) }
@@ -113,30 +113,7 @@ struct MenuBarView: View {
                 Button("Argon2id Hash") { transformClipboardIfValid(ClipboardTransform.argon2idHash) }
                 Button("bcrypt Hash") { transformClipboardIfValid(ClipboardTransform.bcryptHash) }
             }
-            Menu("Structured Data") {
-                Button("JSON Prettify") { transformClipboard(ClipboardTransform.jsonPrettify) }
-                Button("JSON Minify") { transformClipboard(ClipboardTransform.jsonMinify) }
-                Button("Sort JSON Keys") { transformClipboard(ClipboardTransform.jsonSortKeys) }
-                Divider()
-                Button("YAML Prettify") { transformClipboard(ClipboardTransform.yamlPrettify) }
-                Button("YAML Minify") { transformClipboard(ClipboardTransform.yamlMinify) }
-                Divider()
-                Button("JSON → YAML") { transformClipboardIfValid(ClipboardTransform.jsonToYaml) }
-                Button("YAML → JSON") { transformClipboardIfValid(ClipboardTransform.yamlToJson) }
-                Divider()
-                Button("JSON Array → CSV") { transformClipboardIfValid(ClipboardTransform.jsonArrayToCsv) }
-                Button("CSV → JSON Array") { transformClipboardIfValid(ClipboardTransform.csvToJson) }
-                Divider()
-                Button("CSV → TSV") { transformClipboard(ClipboardTransform.csvToTsv) }
-                Button("TSV → CSV") { transformClipboardIfValid(ClipboardTransform.tsvToCsv) }
-                Button("CSV → PSV") { transformClipboard(ClipboardTransform.csvToPsv) }
-                Button("PSV → CSV") { transformClipboardIfValid(ClipboardTransform.psvToCsv) }
-                Divider()
-                Button("MySQL CLI Table → CSV") { transformClipboardIfValid(ClipboardTransform.mysqlCliTableToCsv) }
-                Button("psql Table → CSV") { transformClipboardIfValid(ClipboardTransform.psqlCliTableToCsv) }
-                Button("sqlite3 Table → CSV") { transformClipboardIfValid(ClipboardTransform.sqlite3TableToCsv) }
-            }
-            Menu("Multi-line Data") {
+            Menu("Multi-line") {
                 Button("Sort Lines") { transformClipboard(ClipboardTransform.sortLines) }
                 Button("Deduplicate Lines") { transformClipboard(ClipboardTransform.deduplicateLines) }
                 Button("Sort + Dedupe Lines") { transformClipboard(ClipboardTransform.sortAndDeduplicateLines) }
@@ -149,6 +126,37 @@ struct MenuBarView: View {
                 Button("Trim Lines") { transformClipboard(ClipboardTransform.trimLines) }
                 Divider()
                 Button("CRLF → LF (strip \\r)") { transformClipboard(ClipboardTransform.windowsNewlinesToUnix) }
+            }
+            Menu("Structured") {
+                Button("JSON Prettify") { transformClipboard(ClipboardTransform.jsonPrettify) }
+                Button("JSON Minify") { transformClipboard(ClipboardTransform.jsonMinify) }
+                Button("JSON Sort Keys") { transformClipboard(ClipboardTransform.jsonSortKeys) }
+                Button("JSON Strip Nulls") { transformClipboard(ClipboardTransform.jsonStripNulls) }
+                Divider()
+                Button("YAML Prettify") { transformClipboard(ClipboardTransform.yamlPrettify) }
+                Button("YAML Minify") { transformClipboard(ClipboardTransform.yamlMinify) }
+                Divider()
+                Button("JSON → YAML") { transformClipboardIfValid(ClipboardTransform.jsonToYaml) }
+                Button("YAML → JSON") { transformClipboardIfValid(ClipboardTransform.yamlToJson) }
+                Divider()
+                Button("JSON Array → CSV") { transformClipboardIfValid(ClipboardTransform.jsonArrayToCsv) }
+                Button("CSV → JSON (typed)") { transformClipboardIfValid(ClipboardTransform.csvToJson) }
+                Button("CSV → JSON (strings)") { transformClipboardIfValid(ClipboardTransform.csvToJsonStrings) }
+                Divider()
+                Button("CSV → TSV") { transformClipboard(ClipboardTransform.csvToTsv) }
+                Button("TSV → CSV") { transformClipboardIfValid(ClipboardTransform.tsvToCsv) }
+                Button("CSV → PSV") { transformClipboard(ClipboardTransform.csvToPsv) }
+                Button("PSV → CSV") { transformClipboardIfValid(ClipboardTransform.psvToCsv) }
+            }
+            Menu("Database") {
+                Button("MySQL CLI Table → CSV") { transformClipboardIfValid(ClipboardTransform.mysqlCliTableToCsv) }
+                Button("MySQL CLI Table → JSON") { transformClipboardIfValid(ClipboardTransform.mysqlCliTableToJson) }
+                Divider()
+                Button("psql Table → CSV") { transformClipboardIfValid(ClipboardTransform.psqlCliTableToCsv) }
+                Button("psql Table → JSON") { transformClipboardIfValid(ClipboardTransform.psqlCliTableToJson) }
+                Divider()
+                Button("sqlite3 Table → CSV") { transformClipboardIfValid(ClipboardTransform.sqlite3TableToCsv) }
+                Button("sqlite3 Table → JSON") { transformClipboardIfValid(ClipboardTransform.sqlite3TableToJson) }
             }
             Menu("Escaping") {
                 Button("Escape Double Quotes") { transformClipboard(ClipboardTransform.escapeDoubleQuotes) }
