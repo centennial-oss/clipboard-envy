@@ -125,11 +125,16 @@ struct MenuBarView: View {
                 Button("YAML → JSON") { transformClipboardIfValid(ClipboardTransform.yamlToJson) }
                 Divider()
                 Button("JSON Array → CSV") { transformClipboardIfValid(ClipboardTransform.jsonArrayToCsv) }
+                Button("CSV → JSON Array") { transformClipboardIfValid(ClipboardTransform.csvToJson) }
+                Divider()
                 Button("CSV → TSV") { transformClipboard(ClipboardTransform.csvToTsv) }
-                Button("CSV → JSON") { transformClipboardIfValid(ClipboardTransform.csvToJson) }
+                Button("TSV → CSV") { transformClipboardIfValid(ClipboardTransform.tsvToCsv) }
+                Button("CSV → PSV") { transformClipboard(ClipboardTransform.csvToPsv) }
+                Button("PSV → CSV") { transformClipboardIfValid(ClipboardTransform.psvToCsv) }
                 Divider()
                 Button("MySQL CLI Table → CSV") { transformClipboardIfValid(ClipboardTransform.mysqlCliTableToCsv) }
                 Button("psql Table → CSV") { transformClipboardIfValid(ClipboardTransform.psqlCliTableToCsv) }
+                Button("sqlite3 Table → CSV") { transformClipboardIfValid(ClipboardTransform.sqlite3TableToCsv) }
             }
             Menu("Multi-line Data") {
                 Button("Sort Lines") { transformClipboard(ClipboardTransform.sortLines) }

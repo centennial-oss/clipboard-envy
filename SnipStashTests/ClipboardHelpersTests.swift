@@ -293,6 +293,24 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertTrue(tsv.contains("\t"))
     }
 
+    func testCsvToPsv() {
+        let csv = "a,b\n1,2"
+        let psv = ClipboardTransform.csvToPsv(csv)
+        XCTAssertEqual(psv, "a|b\n1|2")
+    }
+
+    func testPsvToCsv() throws {
+        let psv = "a|b\n1|2"
+        let csv = try ClipboardTransform.psvToCsv(psv)
+        XCTAssertEqual(csv, "a,b\n1,2")
+    }
+
+    func testTsvToCsv() throws {
+        let tsv = "a\tb\n1\t2"
+        let csv = try ClipboardTransform.tsvToCsv(tsv)
+        XCTAssertEqual(csv, "a,b\n1,2")
+    }
+
     func testMysqlCliTableToCsv() throws {
         let input = """
         Some noise before the table
@@ -393,6 +411,23 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertThrowsError(try ClipboardTransform.psqlCliTableToCsv(input)) { error in
             XCTAssertTrue(String(describing: error).contains("could not find the dashed separator line"))
         }
+    }
+
+    func testSqlite3TableToCsv() throws {
+        let input = """
+        one      two
+        -------  ---
+        hello!   10
+        goodbuy  20
+        """
+
+        let expected = """
+        one,two
+        hello!,10
+        goodbuy,20
+        """
+
+        XCTAssertEqual(try ClipboardTransform.sqlite3TableToCsv(input), expected)
     }
 
     // MARK: - Quote escaping

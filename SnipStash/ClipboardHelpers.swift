@@ -541,6 +541,18 @@ enum ClipboardTransform {
         return ([headerLine] + dataLines).joined(separator: "\n")
     }
 
+    nonisolated static func csvToPsv(_ s: String) -> String {
+        parseCSVRows(s).map { makeDelimitedLine($0, delimiter: "|") }.joined(separator: "\n")
+    }
+
+    nonisolated static func psvToCsv(_ s: String) throws -> String {
+        try delimitedToCsv(s, delimiter: "|", formatName: "PSV")
+    }
+
+    nonisolated static func tsvToCsv(_ s: String) throws -> String {
+        try delimitedToCsv(s, delimiter: "\t", formatName: "TSV")
+    }
+
     /// Convert MySQL CLI table output to CSV. Ignores any text before the first table border
     /// and after the last table border.
     nonisolated static func mysqlCliTableToCsv(_ s: String) throws -> String {
@@ -628,6 +640,37 @@ enum ClipboardTransform {
         }.joined(separator: "\n")
     }
 
+    /// Convert sqlite3 column-mode table output to CSV. Columns are inferred from the dashed
+    /// separator row and extracted using fixed-width boundaries.
+    nonisolated static func sqlite3TableToCsv(_ s: String) throws -> String {
+        let lines = windowsNewlinesToUnix(s)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .components(separatedBy: .newlines)
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+        guard lines.count >= 3 else {
+            throw TransformError(description: "sqlite3 Table → CSV failed: expected a header row, a dashed separator row, and at least one data row.")
+        }
+        let headerLine = lines[0]
+        let separatorLine = lines[1]
+        let dataLines = Array(lines.dropFirst(2))
+
+        let columnStarts = sqlite3ColumnStarts(from: separatorLine)
+        guard !columnStarts.isEmpty else {
+            throw TransformError(description: "sqlite3 Table → CSV failed: could not infer fixed-width columns from the dashed separator row.")
+        }
+
+        let headers = parseSQLite3FixedWidthRow(headerLine, columnStarts: columnStarts)
+        guard !headers.isEmpty, headers.contains(where: { !$0.isEmpty }) else {
+            throw TransformError(description: "sqlite3 Table → CSV failed: header row did not contain any columns.")
+        }
+
+        let rows = [headers] + dataLines.map { parseSQLite3FixedWidthRow($0, columnStarts: columnStarts) }
+        return rows.map { row in
+            row.map(escapeCSVField).joined(separator: ",")
+        }.joined(separator: "\n")
+    }
+
     // MARK: - Quote escaping
 
     nonisolated static func escapeDoubleQuotes(_ s: String) -> String {
@@ -676,7 +719,7 @@ enum ClipboardTransform {
 
     /// Parse CSV into rows of fields (handles quoted fields).
     nonisolated static func parseCSVRows(_ s: String) -> [[String]] {
-        s.components(separatedBy: .newlines).map(parseCSVLine)
+        parseDelimitedRows(s, delimiter: ",")
     }
 
     private nonisolated static func isMySQLCliTableBorder(_ line: String) -> Bool {
@@ -726,27 +769,108 @@ enum ClipboardTransform {
         return row + Array(repeating: "", count: headerCount - row.count)
     }
 
-    nonisolated static func parseCSVLine(_ line: String) -> [String] {
+    private nonisolated static func parseDelimitedRows(_ s: String, delimiter: Character) -> [[String]] {
+        windowsNewlinesToUnix(s).components(separatedBy: .newlines).map { parseDelimitedLine($0, delimiter: delimiter) }
+    }
+
+    private nonisolated static func parseDelimitedLine(_ line: String, delimiter: Character) -> [String] {
         var fields: [String] = []
         var current = ""
         var inQuotes = false
-        for c in line.unicodeScalars {
-            switch c {
-            case "\"": inQuotes.toggle()
-            case "," where !inQuotes:
+        let chars = Array(line)
+        var i = 0
+
+        while i < chars.count {
+            let c = chars[i]
+            if c == "\"" {
+                if inQuotes, i + 1 < chars.count, chars[i + 1] == "\"" {
+                    current.append("\"")
+                    i += 1
+                } else {
+                    inQuotes.toggle()
+                }
+            } else if c == delimiter, !inQuotes {
                 fields.append(current)
                 current = ""
-            default:
-                current.append(Character(c))
+            } else {
+                current.append(c)
             }
+            i += 1
         }
+
         fields.append(current)
         return fields
     }
 
+    private nonisolated static func makeDelimitedLine(_ fields: [String], delimiter: Character) -> String {
+        fields.map { field in
+            if field.contains(delimiter) || field.contains("\"") || field.contains("\n") {
+                return "\"" + field.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+            }
+            return field
+        }.joined(separator: String(delimiter))
+    }
+
+    private nonisolated static func delimitedToCsv(_ s: String, delimiter: Character, formatName: String) throws -> String {
+        let trimmed = windowsNewlinesToUnix(s).trimmingCharacters(in: .newlines)
+        guard !trimmed.isEmpty else {
+            throw TransformError(description: "\(formatName) → CSV failed: clipboard is empty.")
+        }
+
+        let rows = parseDelimitedRows(trimmed, delimiter: delimiter)
+        guard let headers = rows.first, !headers.isEmpty else {
+            throw TransformError(description: "\(formatName) → CSV failed: no header row was found.")
+        }
+        guard rows.allSatisfy({ $0.count == headers.count }) else {
+            throw TransformError(description: "\(formatName) → CSV failed: one or more rows have a different number of columns than the header.")
+        }
+
+        return rows.map { makeDelimitedLine($0, delimiter: ",") }.joined(separator: "\n")
+    }
+
+    private nonisolated static func escapeCSVField(_ value: String) -> String {
+        if value.contains(",") || value.contains("\"") || value.contains("\n") {
+            return "\"" + value.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+        }
+        return value
+    }
+
+    private nonisolated static func sqlite3ColumnStarts(from separatorLine: String) -> [Int] {
+        let chars = Array(separatorLine)
+        var starts: [Int] = []
+        var i = 0
+        while i < chars.count {
+            if chars[i] == "-" {
+                starts.append(i)
+                while i < chars.count, chars[i] == "-" {
+                    i += 1
+                }
+            } else if chars[i] == " " {
+                i += 1
+            } else {
+                return []
+            }
+        }
+        return starts
+    }
+
+    private nonisolated static func parseSQLite3FixedWidthRow(_ line: String, columnStarts: [Int]) -> [String] {
+        let chars = Array(line)
+        return columnStarts.enumerated().map { index, start in
+            let end = index + 1 < columnStarts.count ? columnStarts[index + 1] : chars.count
+            guard start < chars.count else { return "" }
+            let upperBound = min(end, chars.count)
+            return String(chars[start..<upperBound]).trimmingCharacters(in: .whitespaces)
+        }
+    }
+
+    nonisolated static func parseCSVLine(_ line: String) -> [String] {
+        parseDelimitedLine(line, delimiter: ",")
+    }
+
     /// Convert CSV to TSV for pasting into spreadsheet apps (handles quoted fields).
     nonisolated static func csvToTsv(_ s: String) -> String {
-        parseCSVRows(s).map { $0.joined(separator: "\t") }.joined(separator: "\n")
+        parseCSVRows(s).map { makeDelimitedLine($0, delimiter: "\t") }.joined(separator: "\n")
     }
 
     // MARK: - Line tools
