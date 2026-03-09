@@ -3,6 +3,14 @@ import XCTest
 
 @MainActor
 final class ClipboardHelpersTests: XCTestCase {
+    private func decodeJSONArray(_ json: String, file: StaticString = #filePath, line: UInt = #line) throws -> [[String: Any]] {
+        let data = try XCTUnwrap(json.data(using: .utf8), file: file, line: line)
+        return try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [[String: Any]],
+            file: file,
+            line: line
+        )
+    }
 
     // MARK: - Case / whitespace
 
@@ -176,6 +184,42 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertEqual(ClipboardTransform.jsonSortKeys(bad), bad)
     }
 
+    func testJsonStripNulls_minifiedInput() {
+        let input = #"{"a":1,"b":null,"c":"null","d":{"e":null,"f":2},"g":[1,null,"null",{"h":null,"i":3}]}"#
+        let result = ClipboardTransform.jsonStripNulls(input)
+        let expected = #"{"a":1,"c":"null","d":{"f":2},"g":[1,"null",{"i":3}]}"#
+        XCTAssertEqual(result, expected)
+    }
+
+    func testJsonStripNulls_prettyInput() throws {
+        let input = """
+        {
+          "a": null,
+          "b": {
+            "c": 1,
+            "d": null
+          },
+          "e": [
+            null,
+            2
+          ]
+        }
+        """
+        let result = ClipboardTransform.jsonStripNulls(input)
+        let rows = try decodeJSONArray("[\(result)]")
+        let obj = try XCTUnwrap(rows.first)
+
+        XCTAssertNil(obj["a"])
+        XCTAssertEqual((obj["b"] as? [String: Any])?["c"] as? Int, 1)
+        XCTAssertNil((obj["b"] as? [String: Any])?["d"])
+        XCTAssertEqual(obj["e"] as? [Int], [2])
+    }
+
+    func testJsonStripNulls_invalidJson_returnsInputUnchanged() {
+        let bad = "not json"
+        XCTAssertEqual(ClipboardTransform.jsonStripNulls(bad), bad)
+    }
+
     // MARK: - YAML
 
     func testYamlPrettifyMinify() {
@@ -300,9 +344,98 @@ final class ClipboardHelpersTests: XCTestCase {
     // MARK: - CSV / JSON
 
     func testCsvToJson() throws {
-        let csv = "a,b\n1,2\n3,4"
-        let json = try ClipboardTransform.csvToJson(csv)
-        XCTAssertTrue(json.contains("a") && json.contains("1"))
+        let csv = """
+        id,enabled,label,score
+        12,True,red,1
+        24,t,blue,2.5
+        29,NULL,NULL,NULL
+        """
+        let rows = try decodeJSONArray(ClipboardTransform.csvToJson(csv))
+
+        XCTAssertEqual(rows.count, 3)
+        XCTAssertEqual(rows[0]["id"] as? Int, 12)
+        XCTAssertEqual(rows[0]["enabled"] as? Bool, true)
+        XCTAssertEqual(rows[0]["label"] as? String, "red")
+        let score = try XCTUnwrap((rows[1]["score"] as? NSNumber)?.doubleValue)
+        XCTAssertEqual(score, 2.5, accuracy: 0.0001)
+        XCTAssertTrue(rows[2]["enabled"] is NSNull)
+        XCTAssertTrue(rows[2]["label"] is NSNull)
+        XCTAssertTrue(rows[2]["score"] is NSNull)
+    }
+
+    func testCsvToJson_usesExplicitDatatypesRow() throws {
+        let csv = """
+        id,enabled,label,score,created_at
+        INT,BOOLEAN,VARCHAR(255),"DECIMAL(10,2)",DATETIME
+        12,true,red,1.25,2026-03-09 12:34:56
+        29,NULL,NULL,NULL,NULL
+        """
+        let rows = try decodeJSONArray(ClipboardTransform.csvToJson(csv))
+
+        XCTAssertEqual(rows.count, 2)
+        XCTAssertEqual(rows[0]["id"] as? Int, 12)
+        XCTAssertEqual(rows[0]["enabled"] as? Bool, true)
+        XCTAssertEqual((rows[0]["score"] as? NSNumber)?.doubleValue, 1.25)
+        XCTAssertEqual(rows[0]["label"] as? String, "red")
+        XCTAssertEqual(rows[0]["created_at"] as? String, "2026-03-09 12:34:56")
+        XCTAssertTrue(rows[1]["enabled"] is NSNull)
+        XCTAssertTrue(rows[1]["label"] is NSNull)
+        XCTAssertTrue(rows[1]["score"] is NSNull)
+        XCTAssertTrue(rows[1]["created_at"] is NSNull)
+    }
+
+    func testCsvToJson_datatypesRowDetectionIsCaseInsensitive() throws {
+        let csv = """
+        id,enabled
+        uInT64,bOoLeAn
+        24,F
+        """
+        let rows = try decodeJSONArray(ClipboardTransform.csvToJson(csv))
+
+        XCTAssertEqual(rows.count, 1)
+        XCTAssertEqual(rows[0]["id"] as? Int, 24)
+        XCTAssertEqual(rows[0]["enabled"] as? Bool, false)
+    }
+
+    func testCsvToJson_nonDatatypeSecondRowFallsBackToInference() throws {
+        let csv = """
+        id,label
+        12,red
+        24,blue
+        """
+        let rows = try decodeJSONArray(ClipboardTransform.csvToJson(csv))
+
+        XCTAssertEqual(rows.count, 2)
+        XCTAssertEqual(rows[0]["id"] as? Int, 12)
+        XCTAssertEqual(rows[0]["label"] as? String, "red")
+    }
+
+    func testCsvToJson_infersNumericColumnWhenRemainingCellsAreBlank() throws {
+        let csv = """
+        id,label
+        12,12
+        24,12
+        29,
+        """
+        let rows = try decodeJSONArray(ClipboardTransform.csvToJson(csv))
+
+        XCTAssertEqual(rows.count, 3)
+        XCTAssertEqual(rows[0]["label"] as? Int, 12)
+        XCTAssertEqual(rows[1]["label"] as? Int, 12)
+        XCTAssertTrue(rows[2]["label"] is NSNull)
+    }
+
+    func testCsvToJsonStrings() throws {
+        let csv = """
+        id,enabled,label
+        12,True,red
+        29,NULL,NULL
+        """
+        let rows = try decodeJSONArray(ClipboardTransform.csvToJsonStrings(csv))
+
+        XCTAssertEqual(rows[0]["id"] as? String, "12")
+        XCTAssertEqual(rows[0]["enabled"] as? String, "True")
+        XCTAssertEqual(rows[1]["label"] as? String, "NULL")
     }
 
     func testJsonArrayToCsv() throws {
@@ -359,6 +492,48 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertEqual(try ClipboardTransform.mysqlCliTableToCsv(input), expected)
     }
 
+    func testMysqlCliTableToCsv_convertsNullToEmptyCell() throws {
+        let input = """
+        mysql> select * from colors;
+        +--------+-------+
+        | id     | label |
+        +--------+-------+
+        |     12 | red   |
+        |     24 | blue  |
+        |     29 | NULL  |
+        +--------+-------+
+        """
+
+        let expected = """
+        id,label
+        12,red
+        24,blue
+        29,
+        """
+
+        XCTAssertEqual(try ClipboardTransform.mysqlCliTableToCsv(input), expected)
+    }
+
+    func testMysqlCliTableToJson_infersTypesAndNulls() throws {
+        let input = """
+        mysql> select * from colors;
+        +--------+---------+---------+
+        | id     | enabled | label   |
+        +--------+---------+---------+
+        |     12 | True    | red     |
+        |     24 | f       | blue    |
+        |     29 | NULL    | NULL    |
+        +--------+---------+---------+
+        """
+
+        let rows = try decodeJSONArray(ClipboardTransform.mysqlCliTableToJson(input))
+        XCTAssertEqual(rows[0]["id"] as? Int, 12)
+        XCTAssertEqual(rows[0]["enabled"] as? Bool, true)
+        XCTAssertEqual(rows[1]["enabled"] as? Bool, false)
+        XCTAssertTrue(rows[2]["enabled"] is NSNull)
+        XCTAssertTrue(rows[2]["label"] is NSNull)
+    }
+
     func testMysqlCliTableToCsv_invalidInputReturnsNil() {
         let input = """
         not a mysql cli table
@@ -387,6 +562,42 @@ final class ClipboardHelpersTests: XCTestCase {
         """
 
         XCTAssertEqual(try ClipboardTransform.psqlCliTableToCsv(input), expected)
+    }
+
+    func testPsqlCliTableToCsv_convertsNullToEmptyCell() throws {
+        let input = """
+        id | label
+        ----+-------
+        12 | red
+        24 | blue
+        29 | NULL
+        """
+
+        let expected = """
+        id,label
+        12,red
+        24,blue
+        29,
+        """
+
+        XCTAssertEqual(try ClipboardTransform.psqlCliTableToCsv(input), expected)
+    }
+
+    func testPsqlCliTableToJson_infersTypesAndNulls() throws {
+        let input = """
+        id | enabled | label
+        ----+---------+-------
+        12 | True | red
+        24 | f | blue
+        29 | NULL | NULL
+        """
+
+        let rows = try decodeJSONArray(ClipboardTransform.psqlCliTableToJson(input))
+        XCTAssertEqual(rows[0]["id"] as? Int, 12)
+        XCTAssertEqual(rows[0]["enabled"] as? Bool, true)
+        XCTAssertEqual(rows[1]["enabled"] as? Bool, false)
+        XCTAssertTrue(rows[2]["enabled"] is NSNull)
+        XCTAssertTrue(rows[2]["label"] is NSNull)
     }
 
     func testPsqlCliTableToCsv_matchesProvidedSampleShape() throws {
@@ -452,6 +663,42 @@ final class ClipboardHelpersTests: XCTestCase {
         """
 
         XCTAssertEqual(try ClipboardTransform.sqlite3TableToCsv(input), expected)
+    }
+
+    func testSqlite3TableToCsv_convertsNullToEmptyCell() throws {
+        let input = """
+        id  label
+        --  -----
+        12  red
+        24  blue
+        29  NULL
+        """
+
+        let expected = """
+        id,label
+        12,red
+        24,blue
+        29,
+        """
+
+        XCTAssertEqual(try ClipboardTransform.sqlite3TableToCsv(input), expected)
+    }
+
+    func testSqlite3TableToJson_infersTypesAndNulls() throws {
+        let input = """
+        id  enabled  label
+        --  -------  -----
+        12  True     red
+        24  f        blue
+        29  NULL     NULL
+        """
+
+        let rows = try decodeJSONArray(ClipboardTransform.sqlite3TableToJson(input))
+        XCTAssertEqual(rows[0]["id"] as? Int, 12)
+        XCTAssertEqual(rows[0]["enabled"] as? Bool, true)
+        XCTAssertEqual(rows[1]["enabled"] as? Bool, false)
+        XCTAssertTrue(rows[2]["enabled"] is NSNull)
+        XCTAssertTrue(rows[2]["label"] is NSNull)
     }
 
     // MARK: - Quote escaping
