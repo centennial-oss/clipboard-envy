@@ -35,11 +35,10 @@ struct MenuBarView: View {
         let t0 = Date(timeIntervalSince1970: 0)
         return [
             Snippet(body: "https://google.com", title: "Track 1ZN018AKFUPAIH", timestamp: Date(timeInterval: 1, since: t0)),
-            Snippet(body: "Have you stood+stretched this past hour?", title: nil, timestamp: Date(timeInterval: 2, since: t0)),
-            Snippet(body: "HAVE YOU?", title: nil, timestamp: Date(timeInterval: 3, since: t0)),
+            Snippet(body: "Jump Server FQDN", title: nil, timestamp: Date(timeInterval: 3, since: t0)),
             Snippet(body: "John's PubKey", title: nil, timestamp: Date(timeInterval: 4, since: t0)),
-            Snippet(body: "Interviewer Questions: AWS Lambda", title: nil, timestamp: Date(timeInterval: 5, since: t0)),
-            Snippet(body: "https://github.com/my-org/my-repo/issues", title: nil, timestamp: Date(timeInterval: 6, since: t0)),
+            Snippet(body: "Interview ?s Markdown: AWS Lambda", title: nil, timestamp: Date(timeInterval: 5, since: t0)),
+            Snippet(body: "https://github.com/org/repo/issues", title: nil, timestamp: Date(timeInterval: 6, since: t0)),
         ]
     }()
     #endif
@@ -137,7 +136,7 @@ struct MenuBarView: View {
                     Button("Strip Nulls") { transformClipboard(ClipboardTransform.jsonStripNulls) }
                     Button("Top-Level Keys") { transformClipboard(ClipboardTransform.jsonTopLevelKeys) }
                     Button("All Keys") { transformClipboard(ClipboardTransform.jsonAllKeys) }
-                    Button("[ ] → CSV") { transformClipboardIfValid(ClipboardTransform.jsonArrayToCsv) }
+                    Button("Array → CSV") { transformClipboardIfValid(ClipboardTransform.jsonArrayToCsv) }
                     Button("→ YAML") { transformClipboardIfValid(ClipboardTransform.jsonToYaml) }
                 }
                 Divider()
@@ -274,10 +273,17 @@ struct MenuBarView: View {
                     Button("Per mille ‰") { setClipboardTo("‰") }
                     Button("Basis pts. ‱") { setClipboardTo("‱") }
                     Divider()
-                    Button("Euro €") { setClipboardTo("€") }
-                    Button("Pound £") { setClipboardTo("£") }
-                    Button("Yen ¥") { setClipboardTo("¥") }
-                    Button("Cent ¢") { setClipboardTo("¢") }
+                    Section("Currency") {
+                        Button("Euro €") { setClipboardTo("€") }
+                        Button("Pound £") { setClipboardTo("£") }
+                        Button("Yen/Yuan ¥") { setClipboardTo("¥") }
+                        Button("Rupee ₹") { setClipboardTo("¢") }
+                        Button("Won ₩") { setClipboardTo("¢") }
+                        Button("Baht ฿") { setClipboardTo("¢") }
+                        Button("BTC ₿") { setClipboardTo("¢") }
+                        Button("Dollar $") { setClipboardTo("$") }
+                        Button("Cent ¢") { setClipboardTo("¢") }
+                    }
                 }
             }
             Menu("Random") {

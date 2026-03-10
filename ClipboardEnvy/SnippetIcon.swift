@@ -6,7 +6,7 @@ import SwiftUI
 import AppKit
 
 /// A classic heart shape: two rounded lobes at top, pointed bottom.
-/// Returns a path suitable for use as a cutout (even-odd fill).
+/// Returns a path suitable for use as a cutout (even-odd fill) or as a filled overlay.
 private func heartPath(in rect: CGRect) -> Path {
     var path = Path()
     let w = rect.width
@@ -45,65 +45,75 @@ private func heartPath(in rect: CGRect) -> Path {
     return path
 }
 
-/// A shape representing a pad with spiral binding at the top (snippet icon).
-/// Portrait orientation with circular holes along the top edge.
-struct SnippetIconShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-
-        // Pad body: rounded rect, portrait (taller than wide), centered
-        let padWidth = rect.width * 0.7
-        let padHeight = rect.height * 0.9
-        let padX = rect.midX - padWidth / 2
-        let padY = rect.midY - padHeight / 2
-        let cornerRadius = padWidth * 0.12
-        let bodyRect = CGRect(x: padX, y: padY, width: padWidth, height: padHeight)
-        path.addRoundedRect(in: bodyRect, cornerSize: CGSize(width: cornerRadius, height: cornerRadius))
-
-        // Spiral holes along the top edge (use even-odd fill to punch holes)
-        let holeDiameter = padWidth * 0.2  // Larger holes for better visibility
-        let holeRadius = holeDiameter / 2
-        let holeSpacing = holeDiameter * 1.15
-        let holeCount = max(3, Int(padWidth / holeSpacing))
-        let totalHoleSpan = CGFloat(holeCount - 1) * holeSpacing
-        let startX = padX + padWidth / 2 - totalHoleSpan / 2  // Center the hole row on the pad
-        let holeY = padY + holeRadius * 1.4
-
-        for i in 0..<holeCount {
-            let holeCenter = CGPoint(x: startX + CGFloat(i) * holeSpacing, y: holeY)
-            path.addEllipse(in: CGRect(
-                x: holeCenter.x - holeRadius,
-                y: holeCenter.y - holeRadius,
-                width: holeDiameter,
-                height: holeDiameter
-            ))
-        }
-
-        // Heart cutout on cover (even-odd: shows menu bar through)
-        let heartSize = padWidth * 0.7
-        let heartRect = CGRect(
-            x: padX + (padWidth - heartSize) / 2,
-            y: padY + padHeight * 0.35,
-            width: heartSize,
-            height: heartSize
-        )
-        path.addPath(heartPath(in: heartRect))
-
-        return path
-    }
+private struct HeartShape: Shape {
+    func path(in rect: CGRect) -> Path { heartPath(in: rect) }
 }
 
-/// A SwiftUI view displaying the snippet icon shape with a heart cutout on the cover.
-/// Uses even-odd fill so spiral holes and heart are punched out (menu bar shows through).
+/// SwiftUI view displaying the clipboard icon with a heart cutout.
 struct SnippetIconView: View {
     var body: some View {
-        SnippetIconShape()
-            .fill(Color.primary, style: FillStyle(eoFill: true))
-            .aspectRatio(1, contentMode: .fit)
+        GeometryReader { geo in
+            let s = min(geo.size.width, geo.size.height)
+
+            // Board: a clean rounded rect, sized to read well at 18pt.
+            let boardW = s * 0.74
+            let boardH = s * 0.82
+            // Slightly less curvature on the board edges (leave the clip as a capsule).
+            let cornerR = boardW * 0.13
+
+            // Pill: slightly narrower than before to match the reference.
+            // Important: it overlaps the board, but we do NOT use even-odd fill anymore,
+            // so we avoid the overlap "toggle" artifact.
+            let pillW = boardW * 0.62
+            let pillH = boardH * 0.16
+
+            // Push the board down so the clip protrudes above it.
+            let boardY = (geo.size.height - boardH) / 2 + s * 0.05
+            // Place the clip higher so its top is clearly above the board.
+            // (Clip bottom still overlaps the board slightly.)
+            let pillY = boardY - pillH * 0.55
+            let pillCenterY = pillY + pillH / 2
+
+            // Small "slot" cutout on the clip to avoid the battery look.
+            let slotW = pillW * 0.6
+            let slotH = pillH * 0.4
+            let slotCenterY = pillY + pillH * 0.58
+
+            let heartSize = boardW * 0.68
+
+            ZStack {
+                RoundedRectangle(cornerSize: CGSize(width: cornerR, height: cornerR), style: .continuous)
+                    // Template images use alpha only. Use solid black to ensure consistent opacity.
+                    .fill(Color.black)
+                    .frame(width: boardW, height: boardH)
+                    .position(x: geo.size.width / 2, y: boardY + boardH / 2)
+
+                Capsule(style: .continuous)
+                    .fill(Color.black)
+                    .frame(width: pillW, height: pillH)
+                    .position(x: geo.size.width / 2, y: pillCenterY)
+
+                Capsule(style: .continuous)
+                    .fill(Color.black)
+                    .frame(width: slotW, height: slotH)
+                    .position(x: geo.size.width / 2, y: slotCenterY)
+                    .blendMode(.destinationOut)
+
+                // Punch the heart out so the menu bar background shows through.
+                HeartShape()
+                    .fill(Color.black)
+                    .frame(width: heartSize, height: heartSize)
+                    .position(x: geo.size.width / 2, y: boardY + boardH * 0.55)
+                    .blendMode(.destinationOut)
+            }
+            .compositingGroup()
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .aspectRatio(1, contentMode: .fit)
     }
 }
 
-/// Provides methods for generating a template NSImage of the snippet icon for macOS menu bar usage.
+/// Provides methods for generating an NSImage of the snippet icon for macOS menu bar usage.
 enum SnippetMenubarIcon {
     @MainActor
     static func makeTemplateImage(pointSize: CGFloat = 18, scale: CGFloat = NSScreen.main?.backingScaleFactor ?? 2) -> NSImage {
@@ -117,6 +127,8 @@ enum SnippetMenubarIcon {
             return NSImage(size: NSSize(width: pointSize, height: pointSize))
         }
 
+        // Template icon: system tints it appropriately for the menu bar,
+        // and the heart cutout shows the menu bar background through.
         nsImage.isTemplate = true
         nsImage.size = NSSize(width: pointSize, height: pointSize)
         return nsImage

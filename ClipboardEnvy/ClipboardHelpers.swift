@@ -1100,8 +1100,15 @@ enum ClipboardTransform {
         if inferTypes, isNullToken(rawValue) {
             return NSNull()
         }
-        if inferTypes, isBlankNullForTypedValue(rawValue), type != .string {
-            return NSNull()
+        // Use switch instead of `type != .string` — nested enum inherits @MainActor,
+        // so synthesized Equatable can't be used from this nonisolated context.
+        if inferTypes, isBlankNullForTypedValue(rawValue) {
+            switch type {
+            case .string:
+                break // blank string remains rawValue; handled in .string case below
+            case .bool, .int, .double:
+                return NSNull()
+            }
         }
 
         switch type {
