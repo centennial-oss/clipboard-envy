@@ -12,7 +12,7 @@ Clipboard Envy lives in your Menu Bar so you can capture, store, transform, and 
 
 In addition to developer tools, Clipboard Envy is great for the average user to do things like:
 - Quickly capture snippets that you don't want to lose, like tracking numbers
-- Blocks of text you need to temporarily stash somewhere while rearranging code or a document
+- Blocks of text you need to temporarily stash somewhere while rearranging an article or paper
 - Frequently used snippets (boilerplate, shell commands, links, public keys, how-to steps)
 
 ## Features
@@ -22,7 +22,7 @@ In addition to developer tools, Clipboard Envy is great for the average user to 
 - **Create, Edit, and Arrange Snippets** — Edit and manually create snippets with custom menu labels
 - **Copy to clipboard** — Copy any snippet's content back to the clipboard
 - **Open URL** — Quickly open URL snippets from the Menu Bar
-- **Transform Clipboard Dataa** - Developer-friendly one-click transformations like convert clipboard contents to lowercase, prettify/minify JSON, Base64-encode/decode, sort and de-duplicate lines, and more!
+- **Transform Clipboard Data** - Developer-friendly one-click transformations like convert clipboard contents to lowercase, prettify/minify JSON, Base64-encode/decode, sort and de-duplicate lines, and more!
 - **Set Clipboard Data** - One-click to set the clipboard contents to the current epoch timestamp, random values like generated passwords or UUIDs, filler text like Lorem Ipsum, and common symbols that aren't on most keyboards.
 - **Analyze Clipboard** - Reveals the number of lines, words, characters and em dashes in the clipboard.
 - **Persistent storage** — Clipboard Envy snippet data is stored locally (sorry no cloud syncing!).
