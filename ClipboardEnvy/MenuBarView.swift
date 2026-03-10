@@ -45,17 +45,6 @@ struct MenuBarView: View {
     #endif
 
     var body: some View {
-        Button("New Snippet") {
-            editorStore.editingSnippet = nil
-            editorStore.initialBody = nil
-            editorStore.analyzeSessionId = nil
-            editorStore.editorWindowTitle = "Snippet Editor"
-            openWindow(id: "editor")
-            DispatchQueue.main.async {
-                NSApp.activate(ignoringOtherApps: true)
-            }
-        }
-        Button("New Snippet From Clipboard", action: quickSaveFromClipboard)
         Button("Analyze Clipboard Data") {
             if let str = ClipboardIO.readString() {
                 editorStore.initialBody = str
@@ -325,6 +314,18 @@ struct MenuBarView: View {
             }
         }
         Divider()
+        Button("New Snippet") {
+            editorStore.editingSnippet = nil
+            editorStore.initialBody = nil
+            editorStore.analyzeSessionId = nil
+            editorStore.editorWindowTitle = "Snippet Editor"
+            openWindow(id: "editor")
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+            }
+        }
+        Button("New Snippet From Clipboard", action: quickSaveFromClipboard)
+        Divider()
         if displayedSnippets.isEmpty {
             Text("No snippets yet")
         } else {
@@ -355,11 +356,11 @@ struct MenuBarView: View {
         }
         Divider()
         Toggle("Mute Sounds", isOn: $muteSounds)
-        Button("About SnipStash") {
+        Button("About Clipboard Envy") {
             openWindow(id: "about")
             DispatchQueue.main.async {
                 NSApp.activate(ignoringOtherApps: true)
-                if let w = NSApp.windows.first(where: { $0.title == "About SnipStash" }) {
+                if let w = NSApp.windows.first(where: { $0.title == "About Clipboard Envy" }) {
                     if w.isMiniaturized {
                         w.deminiaturize(nil)
                     }
@@ -367,7 +368,7 @@ struct MenuBarView: View {
                 }
             }
         }
-        Button("Quit SnipStash") {
+        Button("Quit Clipboard Envy") {
             NSApp.terminate(nil)
         }
         .onAppear {

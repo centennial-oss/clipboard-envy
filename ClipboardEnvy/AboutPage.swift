@@ -1,14 +1,14 @@
 //
-//  AboutSnipStashView.swift
-//  SnipStash
+//  AboutPage.swift
+//  Clipboard Envy
 //
 
 import SwiftUI
 import AppKit
 
-struct AboutSnipStashView: View {
-    private let githubURL = URL(string: "https://github.com/centennial-oss/snipstash")!
-    private static let windowTitle = "About SnipStash"
+struct AboutClipboardEnvyView: View {
+    private let githubURL = URL(string: "https://github.com/centennial-oss/clipboard-envy")!
+    private static let windowTitle = "About Clipboard Envy"
     @State private var escapeMonitor: Any? = nil
 
     var body: some View {
@@ -32,20 +32,20 @@ struct AboutSnipStashView: View {
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
 
-            Label("SnipStash is 100% private. It does not snoop or collect analytics.", systemImage: "shield")
+            Label("Clipboard Envy is 100% private. It does not snoop or collect analytics.", systemImage: "shield")
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
             
-            Label("SnipStash was vibecoded with Claude, ChatGPT & Cursor Composer.\nIt is completely free and open source for you to enjoy.", systemImage: "heart")
+            Label("Clipboard Envy was vibecoded with Claude, ChatGPT & Cursor Composer.\nIt is completely free and open source for you to enjoy.", systemImage: "heart")
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
             
             Link(destination: githubURL) {
-                Label("GitHub: centennial-oss/snipstash", systemImage: "arrow.up.right.square")
+                Label("GitHub: centennial-oss/clipboard-envy", systemImage: "arrow.up.right.square")
             }
             .font(.system(size: 15))
 
@@ -74,7 +74,7 @@ struct AboutSnipStashView: View {
                 .padding(.leading, 32)
             }
 
-            Label("SnipStash is not a password manager and should not be used to store passwords or other secrets. Use a dedicated password manager like Apple Passwords for sensitive credentials.", systemImage: "exclamationmark.triangle")
+            Label("Clipboard Envy is not a password manager and should not be used to store passwords or other secrets. Use a dedicated password manager like Apple Passwords for sensitive credentials.", systemImage: "exclamationmark.triangle")
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .lineSpacing(4)
@@ -121,6 +121,6 @@ struct AboutSnipStashView: View {
 }
 
 #Preview {
-    AboutSnipStashView()
+    AboutClipboardEnvyView()
         .frame(width: 540, height: 560)
 }

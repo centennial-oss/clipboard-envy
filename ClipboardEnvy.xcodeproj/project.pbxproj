@@ -16,25 +16,25 @@
 			containerPortal = D3606AD62F5238EF00720950 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = D3606ADD2F5238EF00720950;
-			remoteInfo = SnipStash;
+			remoteInfo = ClipboardEnvy;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		D3606ADE2F5238EF00720950 /* SnipStash.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SnipStash.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		D3606AE12F5238F100720950 /* SnipStash/Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = SnipStash/Version.xcconfig; sourceTree = SOURCE_ROOT; };
-		D36T00012F55000000720950 /* SnipStashTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SnipStashTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3606ADE2F5238EF00720950 /* ClipboardEnvy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClipboardEnvy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3606AE12F5238F100720950 /* ClipboardEnvy/Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ClipboardEnvy/Version.xcconfig; sourceTree = SOURCE_ROOT; };
+		D36T00012F55000000720950 /* ClipboardEnvyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipboardEnvyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		D3606AE02F5238EF00720950 /* SnipStash */ = {
+		D3606AE02F5238EF00720950 /* ClipboardEnvy */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SnipStash;
+			path = ClipboardEnvy;
 			sourceTree = "<group>";
 		};
-		D36T00022F55000000720950 /* SnipStashTests */ = {
+		D36T00022F55000000720950 /* ClipboardEnvyTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SnipStashTests;
+			path = ClipboardEnvyTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -61,8 +61,8 @@
 		D3606AD52F5238EF00720950 = {
 			isa = PBXGroup;
 			children = (
-				D3606AE02F5238EF00720950 /* SnipStash */,
-				D36T00022F55000000720950 /* SnipStashTests */,
+				D3606AE02F5238EF00720950 /* ClipboardEnvy */,
+				D36T00022F55000000720950 /* ClipboardEnvyTests */,
 				D3606ADF2F5238EF00720950 /* Products */,
 				D39CE0092F54E833005FAE7B /* Recovered References */,
 			);
@@ -71,8 +71,8 @@
 		D3606ADF2F5238EF00720950 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D3606ADE2F5238EF00720950 /* SnipStash.app */,
-				D36T00012F55000000720950 /* SnipStashTests.xctest */,
+				D3606ADE2F5238EF00720950 /* ClipboardEnvy.app */,
+				D36T00012F55000000720950 /* ClipboardEnvyTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -80,7 +80,7 @@
 		D39CE0092F54E833005FAE7B /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
-				D3606AE12F5238F100720950 /* SnipStash/Version.xcconfig */,
+				D3606AE12F5238F100720950 /* ClipboardEnvy/Version.xcconfig */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -88,9 +88,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D3606ADD2F5238EF00720950 /* SnipStash */ = {
+		D3606ADD2F5238EF00720950 /* ClipboardEnvy */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D3606AEB2F5238F000720950 /* Build configuration list for PBXNativeTarget "SnipStash" */;
+			buildConfigurationList = D3606AEB2F5238F000720950 /* Build configuration list for PBXNativeTarget "ClipboardEnvy" */;
 			buildPhases = (
 				D3606AE22F5238F100720950 /* Generate Build Info */,
 				D3606ADA2F5238EF00720950 /* Sources */,
@@ -103,19 +103,19 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				D3606AE02F5238EF00720950 /* SnipStash */,
+				D3606AE02F5238EF00720950 /* ClipboardEnvy */,
 			);
-			name = SnipStash;
+			name = ClipboardEnvy;
 			packageProductDependencies = (
 				D39E00022F54F000005FAE7B /* argon2 */,
 			);
-			productName = SnipStash;
-			productReference = D3606ADE2F5238EF00720950 /* SnipStash.app */;
+			productName = ClipboardEnvy;
+			productReference = D3606ADE2F5238EF00720950 /* ClipboardEnvy.app */;
 			productType = "com.apple.product-type.application";
 		};
-		D36T00052F55000000720950 /* SnipStashTests */ = {
+		D36T00052F55000000720950 /* ClipboardEnvyTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D36T00062F55000000720950 /* Build configuration list for PBXNativeTarget "SnipStashTests" */;
+			buildConfigurationList = D36T00062F55000000720950 /* Build configuration list for PBXNativeTarget "ClipboardEnvyTests" */;
 			buildPhases = (
 				D36T00072F55000000720950 /* Sources */,
 				D36T00042F55000000720950 /* Frameworks */,
@@ -127,13 +127,13 @@
 				D36T00092F55000000720950 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				D36T00022F55000000720950 /* SnipStashTests */,
+				D36T00022F55000000720950 /* ClipboardEnvyTests */,
 			);
-			name = SnipStashTests;
+			name = ClipboardEnvyTests;
 			packageProductDependencies = (
 			);
-			productName = SnipStashTests;
-			productReference = D36T00012F55000000720950 /* SnipStashTests.xctest */;
+			productName = ClipboardEnvyTests;
+			productReference = D36T00012F55000000720950 /* ClipboardEnvyTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -151,7 +151,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D3606AD92F5238EF00720950 /* Build configuration list for PBXProject "SnipStash" */;
+			buildConfigurationList = D3606AD92F5238EF00720950 /* Build configuration list for PBXProject "ClipboardEnvy" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -168,8 +168,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D3606ADD2F5238EF00720950 /* SnipStash */,
-				D36T00052F55000000720950 /* SnipStashTests */,
+				D3606ADD2F5238EF00720950 /* ClipboardEnvy */,
+				D36T00052F55000000720950 /* ClipboardEnvyTests */,
 			);
 		};
 /* End PBXProject section */
@@ -205,11 +205,11 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"${SRCROOT}/SnipStash/BuildInfo.generated.swift",
+				"${SRCROOT}/ClipboardEnvy/BuildInfo.generated.swift",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "COMMIT=$(git -C \"${SRCROOT}\" rev-parse HEAD 2>/dev/null) || COMMIT=\"unknown\"\nDATE=$(date -u +\"%Y-%m-%dT%H:%M:%S.000Z\" 2>/dev/null) || DATE=\"unknown\"\nCONFIG=\"${CONFIGURATION}\"\nARCH=\"${ARCHS}\"\n[ -z \"$ARCH\" ] && ARCH=$(uname -m)\ncase \"$ARCH\" in *\" \"*) ARCH=\"Universal\";; esac\nARCH=$(echo \"$ARCH\" | cut -d' ' -f1)\nescape() { echo \"$1\" | sed 's/\\\\/\\\\\\\\/g; s/\"/\\\\\"/g'; }\nCOMMIT_ESC=$(escape \"$COMMIT\")\nDATE_ESC=$(escape \"$DATE\")\nCONFIG_ESC=$(escape \"$CONFIG\")\nARCH_ESC=$(escape \"$ARCH\")\ncat > \"${SRCROOT}/SnipStash/BuildInfo.generated.swift\" << EOF\n// Generated by Run Script - do not edit\nenum BuildInfoGenerated {\n    static let buildCommit = \"${COMMIT_ESC}\"\n    static let buildDate = \"${DATE_ESC}\"\n    static let buildConfiguration = \"${CONFIG_ESC}\"\n    static let buildArch = \"${ARCH_ESC}\"\n}\nEOF\n";
+			shellScript = "COMMIT=$(git -C \"${SRCROOT}\" rev-parse HEAD 2>/dev/null) || COMMIT=\"unknown\"\nDATE=$(date -u +\"%Y-%m-%dT%H:%M:%S.000Z\" 2>/dev/null) || DATE=\"unknown\"\nCONFIG=\"${CONFIGURATION}\"\nARCH=\"${ARCHS}\"\n[ -z \"$ARCH\" ] && ARCH=$(uname -m)\ncase \"$ARCH\" in *\" \"*) ARCH=\"Universal\";; esac\nARCH=$(echo \"$ARCH\" | cut -d' ' -f1)\nescape() { echo \"$1\" | sed 's/\\\\/\\\\\\\\/g; s/\"/\\\\\"/g'; }\nCOMMIT_ESC=$(escape \"$COMMIT\")\nDATE_ESC=$(escape \"$DATE\")\nCONFIG_ESC=$(escape \"$CONFIG\")\nARCH_ESC=$(escape \"$ARCH\")\ncat > \"${SRCROOT}/ClipboardEnvy/BuildInfo.generated.swift\" << EOF\n// Generated by Run Script - do not edit\nenum BuildInfoGenerated {\n    static let buildCommit = \"${COMMIT_ESC}\"\n    static let buildDate = \"${DATE_ESC}\"\n    static let buildConfiguration = \"${CONFIG_ESC}\"\n    static let buildArch = \"${ARCH_ESC}\"\n}\nEOF\n";
 		};
 		D379ECBB2F52600000A9EFED /* Copy to dist */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -228,7 +228,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "mkdir -p \"${PROJECT_DIR}/dist\"\ncp -R \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app\" \"${PROJECT_DIR}/dist/\"\necho \"SnipStash.app copied to ${PROJECT_DIR}/dist/\"\n";
+			shellScript = "mkdir -p \"${PROJECT_DIR}/dist\"\ncp -R \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app\" \"${PROJECT_DIR}/dist/\"\necho \"ClipboardEnvy.app copied to ${PROJECT_DIR}/dist/\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -252,7 +252,7 @@
 /* Begin PBXTargetDependency section */
 		D36T00092F55000000720950 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D3606ADD2F5238EF00720950 /* SnipStash */;
+			target = D3606ADD2F5238EF00720950 /* ClipboardEnvy */;
 			targetProxy = D36T000A2F55000000720950 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -378,7 +378,7 @@
 		};
 		D3606AEC2F5238F000720950 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D3606AE12F5238F100720950 /* SnipStash/Version.xcconfig */;
+			baseConfigurationReference = D3606AE12F5238F100720950 /* ClipboardEnvy/Version.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -423,7 +423,7 @@
 		};
 		D3606AED2F5238F000720950 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D3606AE12F5238F100720950 /* SnipStash/Version.xcconfig */;
+			baseConfigurationReference = D3606AE12F5238F100720950 /* ClipboardEnvy/Version.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -469,14 +469,14 @@
 		D36T000B2F55000000720950 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/SnipStash.app/Contents/MacOS/SnipStash";
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/ClipboardEnvy.app/Contents/MacOS/ClipboardEnvy";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 86G4NP75W9;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.centennialoss.snipstash.SnipStashTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.centennialoss.snipstash.ClipboardEnvyTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -487,14 +487,14 @@
 		D36T000C2F55000000720950 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/SnipStash.app/Contents/MacOS/SnipStash";
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/ClipboardEnvy.app/Contents/MacOS/ClipboardEnvy";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 86G4NP75W9;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.centennialoss.snipstash.SnipStashTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.centennialoss.snipstash.ClipboardEnvyTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -505,7 +505,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D3606AD92F5238EF00720950 /* Build configuration list for PBXProject "SnipStash" */ = {
+		D3606AD92F5238EF00720950 /* Build configuration list for PBXProject "ClipboardEnvy" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3606AE92F5238F000720950 /* Debug */,
@@ -514,7 +514,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D3606AEB2F5238F000720950 /* Build configuration list for PBXNativeTarget "SnipStash" */ = {
+		D3606AEB2F5238F000720950 /* Build configuration list for PBXNativeTarget "ClipboardEnvy" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3606AEC2F5238F000720950 /* Debug */,
@@ -523,7 +523,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D36T00062F55000000720950 /* Build configuration list for PBXNativeTarget "SnipStashTests" */ = {
+		D36T00062F55000000720950 /* Build configuration list for PBXNativeTarget "ClipboardEnvyTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D36T000B2F55000000720950 /* Debug */,

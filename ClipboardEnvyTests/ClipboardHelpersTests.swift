@@ -1,5 +1,5 @@
 import XCTest
-@testable import SnipStash
+@testable import ClipboardEnvy
 
 @MainActor
 final class ClipboardHelpersTests: XCTestCase {

@@ -1,13 +1,13 @@
 //
-//  SnipStashApp.swift
-//  SnipStash
+//  ClipboardEnvyApp.swift
+//  Clipboard Envy
 //
 
 import SwiftUI
 import SwiftData
 
 @main
-struct SnipStashApp: App {
+struct ClipboardEnvyApp: App {
     @StateObject private var editorStore = EditorStore()
     @StateObject private var snippetsStore: SnippetsStore
 
@@ -59,8 +59,8 @@ struct SnipStashApp: App {
         .modelContainer(Self.sharedModelContainer)
         .defaultSize(width: 560, height: 420)
 
-        Window("About SnipStash", id: "about") {
-            AboutSnipStashView()
+        Window("About Clipboard Envy", id: "about") {
+            AboutClipboardEnvyView()
         }
         .defaultSize(width: 520, height: 540)
         .windowResizability(.contentSize)

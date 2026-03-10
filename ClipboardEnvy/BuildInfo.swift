@@ -1,6 +1,6 @@
 //
 //  BuildInfo.swift
-//  SnipStash
+//  ClipboardEnvy
 //
 //  Version and build metadata. BuildInfo.generated.swift is produced by the
 //  "Generate Build Info" Run Script phase and supplies commit, date, and arch.
@@ -11,7 +11,7 @@ import Foundation
 enum BuildInfo {
     /// AppName
     static var appName: String {
-        "SnipStash"
+        "Clipboard Envy"
     }
 
     /// Semantic version (from Info.plist / MARKETING_VERSION). Use TAGVER at build to override.

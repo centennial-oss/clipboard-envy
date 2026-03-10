@@ -315,7 +315,7 @@ enum ClipboardTransform {
     }
 
     /// Argon2id hash (RFC 9106). Uses random 16-byte salt; returns PHC string or nil.
-    /// Parameters come from UserDefaults (see SnipStashApp); override with:
+    /// Parameters come from UserDefaults (see ClipboardEnvyApp); override with:
     ///   defaults write org.centennialoss.snipstash Argon2MemoryKiB &lt;KiB&gt;
     ///   defaults write org.centennialoss.snipstash Argon2Iterations &lt;t&gt;
     ///   defaults write org.centennialoss.snipstash Argon2Parallelism &lt;p&gt;

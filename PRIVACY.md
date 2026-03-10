@@ -1,14 +1,15 @@
-# SnipStash Privacy Policy
+# ClipboardEnvy Privacy Policy
 
-**Last updated:** March 1, 2026
+**Last updated:** March 9, 2026
+ - Updated App Name
 
 ## Summary
 
-SnipStash does not collect, transmit, or share any personal data. All data stays on your device.
+ClipboardEnvy does not collect, transmit, or share any personal data. All data stays on your device.
 
 ## Data Collection
 
-**We collect nothing.** SnipStash does not:
+**We collect nothing.** ClipboardEnvy does not:
 
 - Collect personal information
 - Transmit data over the internet
@@ -27,4 +28,4 @@ We may update this policy occasionally, but will never snoop on you or collect a
 
 ## Contact
 
-Questions? Open an issue at [github.com/centennial-oss/snipstash/issues](https://github.com/centennial-oss/snipstash/issues).
+Questions? Open an issue at [github.com/centennial-oss/clipboard-envy/issues](https://github.com/centennial-oss/clipboard-envy/issues).

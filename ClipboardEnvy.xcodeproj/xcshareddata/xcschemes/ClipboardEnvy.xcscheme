@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D3606ADD2F5238EF00720950"
-               BuildableName = "SnipStash.app"
-               BlueprintName = "SnipStash"
-               ReferencedContainer = "container:SnipStash.xcodeproj">
+               BuildableName = "ClipboardEnvy.app"
+               BlueprintName = "ClipboardEnvy"
+               ReferencedContainer = "container:ClipboardEnvy.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -29,9 +29,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D36T00052F55000000720950"
-               BuildableName = "SnipStashTests.xctest"
-               BlueprintName = "SnipStashTests"
-               ReferencedContainer = "container:SnipStash.xcodeproj">
+               BuildableName = "ClipboardEnvyTests.xctest"
+               BlueprintName = "ClipboardEnvyTests"
+               ReferencedContainer = "container:ClipboardEnvy.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -48,9 +48,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D36T00052F55000000720950"
-               BuildableName = "SnipStashTests.xctest"
-               BlueprintName = "SnipStashTests"
-               ReferencedContainer = "container:SnipStash.xcodeproj">
+               BuildableName = "ClipboardEnvyTests.xctest"
+               BlueprintName = "ClipboardEnvyTests"
+               ReferencedContainer = "container:ClipboardEnvy.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -70,9 +70,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D3606ADD2F5238EF00720950"
-            BuildableName = "SnipStash.app"
-            BlueprintName = "SnipStash"
-            ReferencedContainer = "container:SnipStash.xcodeproj">
+            BuildableName = "ClipboardEnvy.app"
+            BlueprintName = "ClipboardEnvy"
+            ReferencedContainer = "container:ClipboardEnvy.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -87,9 +87,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D3606ADD2F5238EF00720950"
-            BuildableName = "SnipStash.app"
-            BlueprintName = "SnipStash"
-            ReferencedContainer = "container:SnipStash.xcodeproj">
+            BuildableName = "ClipboardEnvy.app"
+            BlueprintName = "ClipboardEnvy"
+            ReferencedContainer = "container:ClipboardEnvy.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
@@ -110,9 +110,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D3606ADD2F5238EF00720950"
-            BuildableName = "SnipStash.app"
-            BlueprintName = "SnipStash"
-            ReferencedContainer = "container:SnipStash.xcodeproj">
+            BuildableName = "ClipboardEnvy.app"
+            BlueprintName = "ClipboardEnvy"
+            ReferencedContainer = "container:ClipboardEnvy.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </RunAction>

@@ -12,7 +12,7 @@ DerivedData/
 *.xcworkspace/xcuserdata/
 
 # Generated at build time
-SnipStash/BuildInfo.generated.swift
+ClipboardEnvy/BuildInfo.generated.swift
 
 # local data
 localdata/
