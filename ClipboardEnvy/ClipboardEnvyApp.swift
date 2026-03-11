@@ -24,6 +24,7 @@ struct ClipboardEnvyApp: App {
     init() {
         _snippetsStore = StateObject(wrappedValue: SnippetsStore(container: Self.sharedModelContainer))
         Self.registerArgon2Defaults()
+        MenuOpenBridge.install()
     }
 
     /// Register default Argon2id parameters. Override via:

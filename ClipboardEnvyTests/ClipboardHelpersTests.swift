@@ -35,6 +35,43 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertEqual(ClipboardTransform.slugify("  a  b  "), "a-b")
     }
 
+    func testSlugify_convertsUnderscoresToHyphens() {
+        XCTAssertEqual(ClipboardTransform.slugify("hello_world"), "hello-world")
+        XCTAssertEqual(ClipboardTransform.slugify("foo_bar_baz"), "foo-bar-baz")
+        XCTAssertEqual(ClipboardTransform.slugify("CONST_CASE"), "const-case")
+        XCTAssertEqual(ClipboardTransform.slugify("mixed_spaces and_underscores"), "mixed-spaces-and-underscores")
+    }
+
+    func testSlugify_handlesCamelCase() {
+        XCTAssertEqual(ClipboardTransform.slugify("camelCase"), "camel-case")
+        XCTAssertEqual(ClipboardTransform.slugify("myVariableName"), "my-variable-name")
+        XCTAssertEqual(ClipboardTransform.slugify("getHTTPResponse"), "get-httpresponse")
+    }
+
+    func testSlugify_handlesPascalCase() {
+        XCTAssertEqual(ClipboardTransform.slugify("PascalCase"), "pascal-case")
+        XCTAssertEqual(ClipboardTransform.slugify("MyClassName"), "my-class-name")
+        XCTAssertEqual(ClipboardTransform.slugify("HTTPRequest"), "httprequest")
+    }
+
+    func testSlugify_handlesMixedInput() {
+        XCTAssertEqual(ClipboardTransform.slugify("myVariable_name"), "my-variable-name")
+        XCTAssertEqual(ClipboardTransform.slugify("Some Mixed_Input"), "some-mixed-input")
+        XCTAssertEqual(ClipboardTransform.slugify("user123Name"), "user123-name")
+    }
+
+    func testSlugify_collapsesConsecutiveHyphens() {
+        XCTAssertEqual(ClipboardTransform.slugify("a--b"), "a-b")
+        XCTAssertEqual(ClipboardTransform.slugify("a---b"), "a-b")
+        XCTAssertEqual(ClipboardTransform.slugify("hello___world"), "hello-world")
+    }
+
+    func testSlugify_stripsLeadingTrailingHyphens() {
+        XCTAssertEqual(ClipboardTransform.slugify("-hello-"), "hello")
+        XCTAssertEqual(ClipboardTransform.slugify("__hello__"), "hello")
+        XCTAssertEqual(ClipboardTransform.slugify("  hello  "), "hello")
+    }
+
     func testTitleCase() {
         XCTAssertEqual(ClipboardTransform.titleCase("hello world"), "Hello World")
     }
@@ -1352,5 +1389,249 @@ final class ClipboardHelpersTests: XCTestCase {
         for i in 0..<(sorted.count - 1) {
             XCTAssertLessThanOrEqual(sorted[i], sorted[i + 1], "ULIDs should be in sort order")
         }
+    }
+
+    // MARK: - Column Operations
+
+    func testDetectDelimiter_csv() {
+        let csv = "a,b,c\n1,2,3"
+        XCTAssertEqual(ClipboardTransform.detectDelimiter(csv), ",")
+    }
+
+    func testDetectDelimiter_tsv() {
+        let tsv = "a\tb\tc\n1\t2\t3"
+        XCTAssertEqual(ClipboardTransform.detectDelimiter(tsv), "\t")
+    }
+
+    func testDetectDelimiter_psv() {
+        let psv = "a|b|c\n1|2|3"
+        XCTAssertEqual(ClipboardTransform.detectDelimiter(psv), "|")
+    }
+
+    func testDetectDelimiter_noDelimiter() {
+        let text = "hello world"
+        XCTAssertNil(ClipboardTransform.detectDelimiter(text))
+    }
+
+    func testColumnHeaders_csv() {
+        let csv = "name,age,city\nAlice,30,NYC\nBob,25,LA"
+        let headers = ClipboardTransform.columnHeaders(csv)
+        XCTAssertEqual(headers, ["name", "age", "city"])
+    }
+
+    func testColumnHeaders_maxColumns() {
+        let csv = "a,b,c,d,e,f\n1,2,3,4,5,6"
+        let headers = ClipboardTransform.columnHeaders(csv, maxColumns: 3)
+        XCTAssertEqual(headers, ["a", "b", "c"])
+    }
+
+    func testColumnHeaders_psv() {
+        let psv = "col1|col2|col3\nval1|val2|val3"
+        let headers = ClipboardTransform.columnHeaders(psv)
+        XCTAssertEqual(headers, ["col1", "col2", "col3"])
+    }
+
+    func testExtractColumnRange_singleColumn() {
+        let csv = "a,b,c\n1,2,3\n4,5,6"
+        let result = ClipboardTransform.extractColumnRange(csv, fromIndex: 1, toIndex: 1)
+        XCTAssertEqual(result, "b\n2\n5")
+    }
+
+    func testExtractColumnRange_multipleColumns() {
+        let csv = "a,b,c,d\n1,2,3,4\n5,6,7,8"
+        let result = ClipboardTransform.extractColumnRange(csv, fromIndex: 1, toIndex: 2)
+        XCTAssertEqual(result, "b,c\n2,3\n6,7")
+    }
+
+    func testExtractColumnRange_reversedIndices() {
+        let csv = "a,b,c,d\n1,2,3,4"
+        let result = ClipboardTransform.extractColumnRange(csv, fromIndex: 2, toIndex: 0)
+        XCTAssertEqual(result, "a,b,c\n1,2,3")
+    }
+
+    func testExtractColumnRange_preservesTSV() {
+        let tsv = "a\tb\tc\n1\t2\t3"
+        let result = ClipboardTransform.extractColumnRange(tsv, fromIndex: 0, toIndex: 1)
+        XCTAssertEqual(result, "a\tb\n1\t2")
+    }
+
+    func testExtractColumnRange_preservesPSV() {
+        let psv = "a|b|c\n1|2|3"
+        let result = ClipboardTransform.extractColumnRange(psv, fromIndex: 1, toIndex: 2)
+        XCTAssertEqual(result, "b|c\n2|3")
+    }
+
+    func testSwapColumns_basic() {
+        let csv = "a,b,c\n1,2,3\n4,5,6"
+        let result = ClipboardTransform.swapColumns(csv, indexA: 0, indexB: 2)
+        XCTAssertEqual(result, "c,b,a\n3,2,1\n6,5,4")
+    }
+
+    func testSwapColumns_adjacent() {
+        let csv = "a,b,c\n1,2,3"
+        let result = ClipboardTransform.swapColumns(csv, indexA: 0, indexB: 1)
+        XCTAssertEqual(result, "b,a,c\n2,1,3")
+    }
+
+    func testSwapColumns_sameIndex() {
+        let csv = "a,b,c\n1,2,3"
+        let result = ClipboardTransform.swapColumns(csv, indexA: 1, indexB: 1)
+        XCTAssertEqual(result, csv)
+    }
+
+    func testSwapColumns_preservesPSV() {
+        let psv = "a|b|c\n1|2|3"
+        let result = ClipboardTransform.swapColumns(psv, indexA: 0, indexB: 2)
+        XCTAssertEqual(result, "c|b|a\n3|2|1")
+    }
+
+    func testMoveColumnToStart() {
+        let csv = "a,b,c,d\n1,2,3,4"
+        let result = ClipboardTransform.moveColumnToStart(csv, fromIndex: 2)
+        XCTAssertEqual(result, "c,a,b,d\n3,1,2,4")
+    }
+
+    func testMoveColumnToStart_alreadyFirst() {
+        let csv = "a,b,c\n1,2,3"
+        let result = ClipboardTransform.moveColumnToStart(csv, fromIndex: 0)
+        XCTAssertEqual(result, csv)
+    }
+
+    func testMoveColumnToEnd() {
+        let csv = "a,b,c,d\n1,2,3,4"
+        let result = ClipboardTransform.moveColumnToEnd(csv, fromIndex: 1)
+        XCTAssertEqual(result, "a,c,d,b\n1,3,4,2")
+    }
+
+    func testMoveColumnToEnd_alreadyLast() {
+        let csv = "a,b,c\n1,2,3"
+        let result = ClipboardTransform.moveColumnToEnd(csv, fromIndex: 2)
+        XCTAssertEqual(result, csv)
+    }
+
+    func testMoveColumnBefore() {
+        let csv = "a,b,c,d\n1,2,3,4"
+        let result = ClipboardTransform.moveColumnBefore(csv, fromIndex: 3, beforeIndex: 1)
+        XCTAssertEqual(result, "a,d,b,c\n1,4,2,3")
+    }
+
+    func testMoveColumnBefore_samePosition() {
+        let csv = "a,b,c\n1,2,3"
+        let result = ClipboardTransform.moveColumnBefore(csv, fromIndex: 1, beforeIndex: 1)
+        XCTAssertEqual(result, csv)
+    }
+
+    func testMoveColumnBefore_immediatelyAfter() {
+        let csv = "a,b,c\n1,2,3"
+        let result = ClipboardTransform.moveColumnBefore(csv, fromIndex: 1, beforeIndex: 2)
+        XCTAssertEqual(result, csv)
+    }
+
+    func testRemoveColumn_first() {
+        let csv = "a,b,c\n1,2,3\n4,5,6"
+        let result = ClipboardTransform.removeColumn(csv, columnIndex: 0)
+        XCTAssertEqual(result, "b,c\n2,3\n5,6")
+    }
+
+    func testRemoveColumn_middle() {
+        let csv = "a,b,c\n1,2,3\n4,5,6"
+        let result = ClipboardTransform.removeColumn(csv, columnIndex: 1)
+        XCTAssertEqual(result, "a,c\n1,3\n4,6")
+    }
+
+    func testRemoveColumn_last() {
+        let csv = "a,b,c\n1,2,3\n4,5,6"
+        let result = ClipboardTransform.removeColumn(csv, columnIndex: 2)
+        XCTAssertEqual(result, "a,b\n1,2\n4,5")
+    }
+
+    func testRemoveColumn_singleColumnReturnsNil() {
+        let csv = "a\n1\n2"
+        let result = ClipboardTransform.removeColumn(csv, columnIndex: 0)
+        XCTAssertNil(result)
+    }
+
+    func testRemoveColumn_preservesTSV() {
+        let tsv = "a\tb\tc\n1\t2\t3"
+        let result = ClipboardTransform.removeColumn(tsv, columnIndex: 1)
+        XCTAssertEqual(result, "a\tc\n1\t3")
+    }
+
+    func testRemoveColumn_preservesPSV() {
+        let psv = "a|b|c\n1|2|3"
+        let result = ClipboardTransform.removeColumn(psv, columnIndex: 0)
+        XCTAssertEqual(result, "b|c\n2|3")
+    }
+
+    func testStripEmptyColumns_removesEmptyMiddle() {
+        let csv = "a,b,c\n1,,3\n4,,6"
+        let result = ClipboardTransform.stripEmptyColumns(csv)
+        XCTAssertEqual(result, "a,c\n1,3\n4,6")
+    }
+
+    func testStripEmptyColumns_removesMultipleEmpty() {
+        let csv = "a,b,c,d\n1,,,4\n5,,,8"
+        let result = ClipboardTransform.stripEmptyColumns(csv)
+        XCTAssertEqual(result, "a,d\n1,4\n5,8")
+    }
+
+    func testStripEmptyColumns_noEmptyColumns() {
+        let csv = "a,b,c\n1,2,3\n4,5,6"
+        let result = ClipboardTransform.stripEmptyColumns(csv)
+        XCTAssertEqual(result, csv)
+    }
+
+    func testStripEmptyColumns_partiallyFilledColumnKept() {
+        let csv = "a,b,c\n1,,3\n4,5,6"
+        let result = ClipboardTransform.stripEmptyColumns(csv)
+        XCTAssertEqual(result, csv)
+    }
+
+    func testStripEmptyColumns_whitespaceOnlyIsEmpty() {
+        let csv = "a,b,c\n1,  ,3\n4,   ,6"
+        let result = ClipboardTransform.stripEmptyColumns(csv)
+        XCTAssertEqual(result, "a,c\n1,3\n4,6")
+    }
+
+    func testStripEmptyColumns_preservesTSV() {
+        let tsv = "a\tb\tc\n1\t\t3\n4\t\t6"
+        let result = ClipboardTransform.stripEmptyColumns(tsv)
+        XCTAssertEqual(result, "a\tc\n1\t3\n4\t6")
+    }
+
+    func testSortByColumn_stringSort() {
+        let csv = "name,age\nCharlie,30\nAlice,25\nBob,35"
+        let result = ClipboardTransform.sortByColumn(csv, columnIndex: 0)
+        XCTAssertEqual(result, "name,age\nAlice,25\nBob,35\nCharlie,30")
+    }
+
+    func testSortByColumn_numericSort() {
+        let csv = "name,age\nCharlie,30\nAlice,5\nBob,25"
+        let result = ClipboardTransform.sortByColumn(csv, columnIndex: 1)
+        XCTAssertEqual(result, "name,age\nAlice,5\nBob,25\nCharlie,30")
+    }
+
+    func testSortByColumn_stableSort() {
+        let csv = "name,color\nAlice,red\nBob,blue\nCharlie,red\nDave,blue"
+        let result = ClipboardTransform.sortByColumn(csv, columnIndex: 1)
+        XCTAssertEqual(result, "name,color\nBob,blue\nDave,blue\nAlice,red\nCharlie,red")
+    }
+
+    func testSortByColumn_preservesTSV() {
+        let tsv = "name\tage\nCharlie\t30\nAlice\t25"
+        let result = ClipboardTransform.sortByColumn(tsv, columnIndex: 0)
+        XCTAssertEqual(result, "name\tage\nAlice\t25\nCharlie\t30")
+    }
+
+    func testSortByColumn_singleRow() {
+        let csv = "a,b\n1,2"
+        let result = ClipboardTransform.sortByColumn(csv, columnIndex: 0)
+        XCTAssertEqual(result, csv)
+    }
+
+    func testSortByColumn_headerOnly() {
+        let csv = "a,b,c"
+        let result = ClipboardTransform.sortByColumn(csv, columnIndex: 0)
+        XCTAssertEqual(result, csv)
     }
 }
