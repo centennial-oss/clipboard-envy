@@ -142,6 +142,10 @@ struct ClipboardAnalysis {
         dataType == .csv || dataType == .tsv || dataType == .psv
     }
 
+    var isPossiblyURLEncoded: Bool {
+        self["URL Encoded"] == "Yes"
+    }
+
 }
 
 /// Clipboard content analyzer for type detection and type-specific analysis.
@@ -566,24 +570,45 @@ enum ClipboardAnalyzer {
     // MARK: - Helpers
 
     private static func addTextMetrics(to analysis: inout ClipboardAnalysis, text: String) {
-        // Text metrics go in a separate section at the bottom
-        analysis.setTextMetric("Characters", "\(text.count)")
-        let words = text.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+        // Check for URL-encoded content first - if so, use decoded text for metrics
+        let isURLEncoded = isPossiblyURLEncoded(text)
+        let metricsText: String
+        if isURLEncoded {
+            let decoded = text.removingPercentEncoding ?? text
+            metricsText = decoded
+            analysis.set("URL Encoded", "Yes")
+            analysis.set("Encoded Size", "\(text.utf8.count) bytes")
+            analysis.set("Decoded Size", "\(decoded.utf8.count) bytes")
+        } else {
+            metricsText = text
+        }
+
+        // Text metrics go in a separate section at the bottom (based on decoded text if URL-encoded)
+        analysis.setTextMetric("Characters", "\(metricsText.count)")
+        let words = metricsText.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
         analysis.setTextMetric("Words", "\(words.count)")
-        let lines = text.components(separatedBy: .newlines)
-        let lineCount = text.hasSuffix("\n") ? lines.count : max(1, lines.count)
+        let lines = metricsText.components(separatedBy: .newlines)
+        let lineCount = metricsText.hasSuffix("\n") ? lines.count : max(1, lines.count)
         analysis.setTextMetric("Lines", "\(lineCount)")
 
-        // Count em dashes (—)
-        let emDashCount = text.filter { $0 == "—" }.count
+        // Count em dashes (—) in the metrics text
+        let emDashCount = metricsText.filter { $0 == "—" }.count
         if emDashCount > 0 {
             analysis.setTextMetric("Em Dashes", "\(emDashCount)")
         }
 
-        // CRLF flag goes in properties, not text metrics
+        // CRLF flag goes in properties, not text metrics (check original text)
         if text.contains("\r") {
             analysis.set("Has CRLF", "Yes")
         }
+    }
+
+    private static func isPossiblyURLEncoded(_ text: String) -> Bool {
+        guard !text.contains(" ") else { return false }
+        if text.contains("+") { return true }
+        let pattern = try? NSRegularExpression(pattern: "%[0-9A-Fa-f]{2}", options: [])
+        let range = NSRange(text.startIndex..., in: text)
+        return (pattern?.firstMatch(in: text, options: [], range: range)) != nil
     }
 
     private static func parseTimeWithFormat(_ s: String) -> (Date, String)? {

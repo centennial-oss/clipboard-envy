@@ -119,6 +119,18 @@ extension ClipboardTransform {
               let out = String(data: pretty, encoding: .utf8) else { return decoded }
         return out
     }
+
+    nonisolated static func jwtDecodeHeader(_ s: String) -> String? {
+        let parts = s.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count >= 2 else { return nil }
+        let headerPart = String(parts[0])
+        let decoded = base64URLDecode(headerPart)
+        guard let data = decoded.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data),
+              let pretty = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
+              let out = String(data: pretty, encoding: .utf8) else { return decoded }
+        return out
+    }
 }
 
 enum CRC32B {

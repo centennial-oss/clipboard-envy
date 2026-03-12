@@ -207,6 +207,30 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertTrue(decoded.contains("sub"))
     }
 
+    func testJWTDecodeHeader() throws {
+        let jwt = try readTestdata("sample-jwt-encoded.txt")
+        guard let header = ClipboardTransform.jwtDecodeHeader(jwt) else {
+            XCTFail("jwtDecodeHeader failed")
+            return
+        }
+        XCTAssertTrue(header.contains("alg"))
+        XCTAssertTrue(header.contains("HS256"))
+        XCTAssertTrue(header.contains("typ"))
+        XCTAssertTrue(header.contains("JWT"))
+    }
+
+    func testJWTDecodePayload_fromFile() throws {
+        let jwt = try readTestdata("sample-jwt-encoded.txt")
+        guard let payload = ClipboardTransform.jwtDecode(jwt) else {
+            XCTFail("jwtDecode failed")
+            return
+        }
+        XCTAssertTrue(payload.contains("sub"))
+        XCTAssertTrue(payload.contains("1234567890"))
+        XCTAssertTrue(payload.contains("name"))
+        XCTAssertTrue(payload.contains("John Doe"))
+    }
+
     // MARK: - JSON
 
     func testJsonPrettifyMinify() {
@@ -1794,5 +1818,43 @@ final class ClipboardHelpersTests: XCTestCase {
         let encoded = try readTestdata("tell-tale-heart-base64url.txt")
         let decoded = ClipboardTransform.base64URLDecode(encoded)
         XCTAssertTrue(decoded.hasPrefix("The Tell-Tale Heart"))
+    }
+
+    func testAnalyzer_urlEncodedFile_detectedAsPossiblyURLEncoded() throws {
+        let content = try readTestdata("tell-tale-heart-p1-urlencoded.txt")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertTrue(analysis.isPossiblyURLEncoded)
+        XCTAssertEqual(analysis["URL Encoded"], "Yes")
+        XCTAssertNotNil(analysis["Encoded Size"])
+        XCTAssertNotNil(analysis["Decoded Size"])
+        XCTAssertEqual(analysis["Words"], "80")
+        XCTAssertEqual(analysis["Lines"], "1")
+        XCTAssertEqual(analysis["Em Dashes"], "5")
+    }
+
+    func testTransform_urlDecode() throws {
+        let encoded = try readTestdata("tell-tale-heart-p1-urlencoded.txt")
+        let decoded = ClipboardTransform.urlDecode(encoded)
+        XCTAssertTrue(decoded.hasPrefix("True!"))
+        XCTAssertTrue(decoded.contains("nervous"))
+        XCTAssertTrue(decoded.contains("whole story."))
+    }
+
+    func testAnalyzer_urlEncodedDetection_requiresNoSpaces() {
+        let withSpaces = "hello%20world test"
+        let analysis = ClipboardAnalyzer.analyze(withSpaces)
+        XCTAssertFalse(analysis.isPossiblyURLEncoded)
+    }
+
+    func testAnalyzer_urlEncodedDetection_detectsPlusSign() {
+        let withPlus = "hello+world"
+        let analysis = ClipboardAnalyzer.analyze(withPlus)
+        XCTAssertTrue(analysis.isPossiblyURLEncoded)
+    }
+
+    func testAnalyzer_urlEncodedDetection_detectsPercentHex() {
+        let withPercent = "hello%21world"
+        let analysis = ClipboardAnalyzer.analyze(withPercent)
+        XCTAssertTrue(analysis.isPossiblyURLEncoded)
     }
 }

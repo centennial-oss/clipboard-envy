@@ -41,7 +41,7 @@ struct MenuBarView: View {
         shouldShowAll || clipboardAnalysis.dataType == .base64URL
     }
 
-    // MARK: - Suggestions Menu
+    // MARK: - Sparkle Decorators (for context-aware suggestions)
 
     private var isUrlWithParams: Bool {
         clipboardAnalysis.dataType == .url && clipboardAnalysis.urlHasQuery
@@ -55,15 +55,31 @@ struct MenuBarView: View {
         clipboardAnalysis.dataType == .json && clipboardAnalysis.isArrayStructure
     }
 
-    private var showSuggestions: Bool {
-        !shouldShowAll && (
-            clipboardAnalysis.dataType == .jwt ||
-            clipboardAnalysis.dataType == .base64 ||
-            clipboardAnalysis.dataType == .base64URL ||
-            isUrlWithParams ||
-            hasCarriageReturns ||
-            isJsonArray
-        )
+    private var showQuickAction: Bool {
+        [.jwt, .base64, .base64URL].contains(clipboardAnalysis.dataType)
+            || isUrlWithParams
+            || hasCarriageReturns
+            || isJsonArray
+    }
+
+    private var isPossiblyURLEncoded: Bool {
+        clipboardAnalysis.isPossiblyURLEncoded
+    }
+
+    private var showURLDecode: Bool {
+        shouldShowAll || isPossiblyURLEncoded
+    }
+
+    // MARK: - Encode & Hash Menu
+
+    private var encodeHashMenuLabel: String {
+        if !shouldShowAll && (clipboardAnalysis.dataType == .jwt ||
+                              clipboardAnalysis.dataType == .base64 ||
+                              clipboardAnalysis.dataType == .base64URL ||
+                              isPossiblyURLEncoded) {
+            return "Encode & Hash ✨"
+        }
+        return "Encode & Hash"
     }
 
     // MARK: - URLs Menu
@@ -273,32 +289,30 @@ struct MenuBarView: View {
                     Text("\(item.key): \(item.value)")
                 }
             }
+            if showQuickAction {
+                Divider()
+            }
+            if clipboardAnalysis.dataType == .jwt {
+                Button("Decode JWT Payload ✨") { transformClipboardIfValid(ClipboardTransform.jwtDecode) }
+            }
+            if clipboardAnalysis.dataType == .base64 {
+                Button("Decode Base64 ✨") { transformClipboard(ClipboardTransform.base64Decode) }
+            }
+            if clipboardAnalysis.dataType == .base64URL {
+                Button("Decode Base64 ✨") { transformClipboard(ClipboardTransform.base64URLDecode) }
+            }
+            if isUrlWithParams {
+                Button("Strip URL Params ✨") { transformClipboardIfValid(ClipboardTransform.stripUrlParamsIfValid) }
+            }
+            if hasCarriageReturns {
+                Button("CRLF → LF (strip \\r) ✨") { transformClipboard(ClipboardTransform.windowsNewlinesToUnix) }
+            }
+            if isJsonArray {
+                Button("JSON Array → CSV ✨") { transformClipboardIfValid(ClipboardTransform.jsonArrayToCsv) }
+            }
         }
         if clipboardAnalysis.dataType != .nonText {
             Menu("Transform Clipboard Data") {
-            if showSuggestions {
-                Menu("Suggestions ✨") {
-                    if clipboardAnalysis.dataType == .jwt {
-                        Button("JWT Decode") { transformClipboardIfValid(ClipboardTransform.jwtDecode) }
-                    }
-                    if clipboardAnalysis.dataType == .base64 {
-                        Button("Base64 Decode") { transformClipboard(ClipboardTransform.base64Decode) }
-                    }
-                    if clipboardAnalysis.dataType == .base64URL {
-                        Button("Base64 Decode (URL-Safe)") { transformClipboard(ClipboardTransform.base64URLDecode) }
-                    }
-                    if isUrlWithParams {
-                        Button("Strip URL Params") { transformClipboardIfValid(ClipboardTransform.stripUrlParamsIfValid) }
-                    }
-                    if hasCarriageReturns {
-                        Button("CRLF → LF (strip \\r)") { transformClipboard(ClipboardTransform.windowsNewlinesToUnix) }
-                    }
-                    if isJsonArray {
-                        Button("JSON Array → CSV") { transformClipboardIfValid(ClipboardTransform.jsonArrayToCsv) }
-                    }
-                }
-                Divider()
-            }
             Menu("General Text") {
                 Button("UPPERCASE") { transformClipboard(ClipboardTransform.uppercase) }
                 Button("lowercase") { transformClipboard(ClipboardTransform.lowercase) }
@@ -354,8 +368,8 @@ struct MenuBarView: View {
                     }
                 }
             }
-            Menu(urlsMenuLabel) {
-                if showURLExtractSection {
+            if showURLExtractSection {
+                Menu(urlsMenuLabel) {
                     Section("Extract") {
                         Button("Host (Domain)") { transformClipboardIfValid(ClipboardTransform.urlExtractHostIfValid) }
                         if showURLExtractHostPort {
@@ -380,40 +394,53 @@ struct MenuBarView: View {
                             Button("Username:Password") { transformClipboardIfValid(ClipboardTransform.urlExtractCredentialsIfValid) }
                         }
                     }
-                }
-                if showURLExtractSection && (showURLExtractUsername || showURLExtractQuery) {
-                    Divider()
-                }
-                if showURLExtractUsername {
-                    Button(showURLExtractCredentials ? "Strip user:pass" : "Strip user") {
-                        transformClipboardIfValid(ClipboardTransform.urlStripCredentialsIfValid)
+                    if showURLExtractSection && (showURLExtractUsername || showURLExtractQuery) {
+                        Divider()
+                    }
+                    if showURLExtractUsername {
+                        Button(showURLExtractCredentials ? "Strip user:pass" : "Strip user") {
+                            transformClipboardIfValid(ClipboardTransform.urlStripCredentialsIfValid)
+                        }
+                    }
+                    if showURLExtractQuery {
+                        Button(isUrlWithParams && !shouldShowAll ? "Strip URL Params ✨" : "Strip URL Params") {
+                            transformClipboardIfValid(ClipboardTransform.stripUrlParamsIfValid)
+                        }
                     }
                 }
-                if showURLExtractQuery {
-                    Button("Strip URL Params") { transformClipboardIfValid(ClipboardTransform.stripUrlParamsIfValid) }
-                }
-                if showURLExtractSection {
-                    Divider()
-                }
-                Button("URL-encode") { transformClipboard(ClipboardTransform.urlEncode) }
-                Button("URL-decode") { transformClipboard(ClipboardTransform.urlDecode) }
             }
-            Menu("Encode & Hash") {
+            Menu(encodeHashMenuLabel) {
+                Section("URL") {
+                    Button("Encode") { transformClipboard(ClipboardTransform.urlEncode) }
+                    if showURLDecode {
+                        Button(isPossiblyURLEncoded && !shouldShowAll ? "Decode ✨" : "Decode") {
+                            transformClipboard(ClipboardTransform.urlDecode)
+                        }
+                    }
+                }
                 Section("Base64") {
                     Button("Encode") { transformClipboard(ClipboardTransform.base64Encode) }
                     if showBase64Decode {
-                        Button("Decode") { transformClipboard(ClipboardTransform.base64Decode) }
+                        Button(clipboardAnalysis.dataType == .base64 && !shouldShowAll ? "Decode ✨" : "Decode") {
+                            transformClipboard(ClipboardTransform.base64Decode)
+                        }
                     }
                 }
                 Section("Base64 URL-Safe") {
                     Button("Encode") { transformClipboard(ClipboardTransform.base64URLEncode) }
                     if showBase64URLDecode {
-                        Button("Decode") { transformClipboard(ClipboardTransform.base64URLDecode) }
+                        Button(clipboardAnalysis.dataType == .base64URL && !shouldShowAll ? "Decode ✨" : "Decode") {
+                            transformClipboard(ClipboardTransform.base64URLDecode)
+                        }
                     }
                 }
                 if showJWTDecode {
-                    Divider()
-                    Button("JWT Decode") { transformClipboardIfValid(ClipboardTransform.jwtDecode) }
+                    Section("JWT") {
+                        Button(clipboardAnalysis.dataType == .jwt && !shouldShowAll ? "Decode Payload ✨" : "Decode Payload") {
+                            transformClipboardIfValid(ClipboardTransform.jwtDecode)
+                        }
+                        Button("Decode Header") { transformClipboardIfValid(ClipboardTransform.jwtDecodeHeader) }
+                    }
                 }
                 Divider()
                 Section("Calculate Checksum") {
@@ -443,7 +470,9 @@ struct MenuBarView: View {
                     Button("Trim Lines") { transformClipboard(ClipboardTransform.trimLines) }
                     if hasCarriageReturns || shouldShowAll {
                         Divider()
-                        Button("CRLF → LF (strip \\r)") { transformClipboard(ClipboardTransform.windowsNewlinesToUnix) }
+                        Button(hasCarriageReturns && !shouldShowAll ? "CRLF → LF (strip \\r) ✨" : "CRLF → LF (strip \\r)") {
+                            transformClipboard(ClipboardTransform.windowsNewlinesToUnix)
+                        }
                     }
                 }
             }
@@ -467,7 +496,9 @@ struct MenuBarView: View {
                             }
                             Button("All Keys") { transformClipboard(ClipboardTransform.jsonAllKeys) }
                             if showJSONArrayToCsv {
-                                Button("Array → CSV") { transformClipboardIfValid(ClipboardTransform.jsonArrayToCsv) }
+                                Button(isJsonArray && !shouldShowAll ? "Array → CSV ✨" : "Array → CSV") {
+                                    transformClipboardIfValid(ClipboardTransform.jsonArrayToCsv)
+                                }
                             }
                             Button("→ YAML") { transformClipboardIfValid(ClipboardTransform.jsonToYaml) }
                         }
