@@ -1,0 +1,6 @@
+product_id|product_name|category|price|in_stock
+SKU001|Wireless Mouse|Electronics|29.99|true
+SKU002|USB-C Cable|Accessories|12.50|true
+SKU003|Mechanical Keyboard|Electronics|149.00|false
+SKU004|Monitor Stand|Furniture|45.00|true
+SKU005|Webcam HD|Electronics|79.99|true

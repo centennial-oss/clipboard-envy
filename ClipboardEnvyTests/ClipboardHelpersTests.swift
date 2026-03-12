@@ -3,6 +3,23 @@ import XCTest
 
 @MainActor
 final class ClipboardHelpersTests: XCTestCase {
+
+    // MARK: - Test Data File Helpers
+
+    /// Returns the path to a file in the testdata directory at the project root.
+    /// Uses #filePath to locate relative to this test file without requiring bundle resources.
+    private func testdataPath(_ filename: String) -> String {
+        let thisFile = URL(fileURLWithPath: #filePath)
+        let projectRoot = thisFile.deletingLastPathComponent().deletingLastPathComponent()
+        return projectRoot.appendingPathComponent("testdata").appendingPathComponent(filename).path
+    }
+
+    /// Reads a file from the testdata directory and returns its contents as a string.
+    private func readTestdata(_ filename: String, file: StaticString = #filePath, line: UInt = #line) throws -> String {
+        let path = testdataPath(filename)
+        return try String(contentsOfFile: path, encoding: .utf8)
+    }
+
     private func decodeJSONArray(_ json: String, file: StaticString = #filePath, line: UInt = #line) throws -> [[String: Any]] {
         let data = try XCTUnwrap(json.data(using: .utf8), file: file, line: line)
         return try XCTUnwrap(
@@ -1633,5 +1650,149 @@ final class ClipboardHelpersTests: XCTestCase {
         let csv = "a,b,c"
         let result = ClipboardTransform.sortByColumn(csv, columnIndex: 0)
         XCTAssertEqual(result, csv)
+    }
+
+    // MARK: - Testdata File Analysis Tests
+
+    func testAnalyzer_csvFile() throws {
+        let content = try readTestdata("sample.csv")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .csv)
+        XCTAssertEqual(analysis["Columns"], "6")
+        XCTAssertEqual(analysis["Rows"], "5")
+    }
+
+    func testAnalyzer_jsonObjectFile() throws {
+        let content = try readTestdata("sample-object.json")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .json)
+        XCTAssertEqual(analysis["Structure"], "Object")
+        XCTAssertFalse(analysis.isArrayStructure)
+    }
+
+    func testAnalyzer_jsonArrayFile() throws {
+        let content = try readTestdata("sample-array.json")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .json)
+        XCTAssertEqual(analysis["Structure"], "Array")
+        XCTAssertTrue(analysis.isArrayStructure)
+        XCTAssertEqual(analysis["Element Count"], "5")
+    }
+
+    func testAnalyzer_psvFile() throws {
+        let content = try readTestdata("sample.psv")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .psv)
+        XCTAssertEqual(analysis["Columns"], "5")
+        XCTAssertEqual(analysis["Rows"], "5")
+    }
+
+    func testAnalyzer_tsvFile() throws {
+        let content = try readTestdata("sample.tsv")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .tsv)
+        XCTAssertEqual(analysis["Columns"], "5")
+        XCTAssertEqual(analysis["Rows"], "5")
+    }
+
+    func testAnalyzer_yamlFile() throws {
+        let content = try readTestdata("sample.yaml")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .yaml)
+        XCTAssertEqual(analysis["Structure"], "Object")
+    }
+
+    func testAnalyzer_base64File() throws {
+        let content = try readTestdata("tell-tale-heart-base64.txt")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .base64)
+        XCTAssertNotNil(analysis["Encoded Size"])
+        XCTAssertNotNil(analysis["Decoded Size"])
+        XCTAssertNotNil(analysis["Decoded Preview"])
+        XCTAssertEqual(analysis["Lines"], "37")
+    }
+
+    func testAnalyzer_base64URLFile() throws {
+        let content = try readTestdata("tell-tale-heart-base64url.txt")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .base64URL)
+        XCTAssertNotNil(analysis["Encoded Size"])
+        XCTAssertNotNil(analysis["Decoded Size"])
+        XCTAssertNotNil(analysis["Decoded Preview"])
+        XCTAssertEqual(analysis["Lines"], "37")
+    }
+
+    func testAnalyzer_mysqlCliFile() throws {
+        let content = try readTestdata("sample-mysql-cli.txt")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .databaseCLITable)
+        XCTAssertEqual(analysis.databaseFormat, "MySQL CLI")
+        XCTAssertEqual(analysis["Columns"], "5")
+        XCTAssertEqual(analysis["Data Rows"], "5")
+    }
+
+    func testAnalyzer_psqlCliFile() throws {
+        let content = try readTestdata("sample-psql-cli.txt")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .databaseCLITable)
+        XCTAssertEqual(analysis.databaseFormat, "psql")
+        XCTAssertEqual(analysis["Columns"], "5")
+    }
+
+    func testAnalyzer_sqlite3CliFile() throws {
+        let content = try readTestdata("sample-sqlite3-cli.txt")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .databaseCLITable)
+        XCTAssertEqual(analysis.databaseFormat, "sqlite3")
+        XCTAssertEqual(analysis["Columns"], "5")
+    }
+
+    func testAnalyzer_urlsFile_firstLineDetectedAsURL() throws {
+        let content = try readTestdata("sample-urls.txt")
+        let firstLine = content.components(separatedBy: .newlines).first ?? ""
+        let analysis = ClipboardAnalyzer.analyze(firstLine)
+        XCTAssertEqual(analysis.dataType, .url)
+        XCTAssertEqual(analysis["Scheme"], "https")
+        XCTAssertEqual(analysis["Host"], "example.com")
+    }
+
+    func testTransform_mysqlCliToCsv() throws {
+        let content = try readTestdata("sample-mysql-cli.txt")
+        let csv = try ClipboardTransform.mysqlCliTableToCsv(content)
+        XCTAssertTrue(csv.contains("id,name,department,hire_date,active"))
+        XCTAssertTrue(csv.contains("Alice Johnson"))
+    }
+
+    func testTransform_psqlCliToCsv() throws {
+        let content = try readTestdata("sample-psql-cli.txt")
+        let csv = try ClipboardTransform.psqlCliTableToCsv(content)
+        XCTAssertTrue(csv.contains("id"))
+        XCTAssertTrue(csv.contains("Alice Johnson"))
+    }
+
+    func testTransform_sqlite3ToCsv() throws {
+        let content = try readTestdata("sample-sqlite3-cli.txt")
+        let csv = try ClipboardTransform.sqlite3TableToCsv(content)
+        XCTAssertTrue(csv.contains("id,name,department,hire_date,active"))
+        XCTAssertTrue(csv.contains("Alice Johnson"))
+    }
+
+    func testTransform_csvToJson() throws {
+        let content = try readTestdata("sample.csv")
+        let json = try ClipboardTransform.csvToJson(content)
+        XCTAssertTrue(json.contains("Alice Johnson"))
+        XCTAssertTrue(json.contains("alice@example.com"))
+    }
+
+    func testTransform_base64Decode() throws {
+        let encoded = try readTestdata("tell-tale-heart-base64.txt")
+        let decoded = ClipboardTransform.base64Decode(encoded)
+        XCTAssertTrue(decoded.hasPrefix("The Tell-Tale Heart"))
+    }
+
+    func testTransform_base64URLDecode() throws {
+        let encoded = try readTestdata("tell-tale-heart-base64url.txt")
+        let decoded = ClipboardTransform.base64URLDecode(encoded)
+        XCTAssertTrue(decoded.hasPrefix("The Tell-Tale Heart"))
     }
 }

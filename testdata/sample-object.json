@@ -1,0 +1,18 @@
+{
+  "name": "myApp",
+  "version": "1.0.0",
+  "description": "A cool utility for macOS",
+  "author": {
+    "name": "Developer",
+    "email": "dev@example.com"
+  },
+  "features": ["toc", "index", "editor"],
+  "settings": {
+    "theme": "dark",
+    "fontSize": 14,
+    "autoSave": true,
+    "maxHistory": 100
+  },
+  "enabled": true,
+  "lastUpdated": "2026-03-01T12:00:00Z"
+}

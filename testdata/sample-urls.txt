@@ -1,0 +1,15 @@
+https://example.com
+https://example.com/path/to/resource
+https://example.com/search?q=hello+world&lang=en
+https://example.com/page#section-anchor
+https://example.com:8443/api/v1/users
+https://user:password@example.com/private
+https://example.com/path?param1=value1&param2=value2&param3=value3
+https://sub.domain.example.com/deeply/nested/path/file.html
+https://example.com/api?filter=active&sort=name&order=asc&limit=100&offset=0
+https://cdn.example.com/assets/images/logo.png?v=2026031112
+http://localhost:3000/dev/test
+https://192.168.1.100:9000/internal/api
+https://example.com/search?q=special%20chars%26more
+https://example.com/path/to/page.html#top?query=ignored
+https://user@example.com/auth/callback

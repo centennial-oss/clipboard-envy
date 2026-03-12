@@ -287,8 +287,9 @@ enum ClipboardAnalyzer {
               isPrintableString(decodedString) else { return nil }
 
         var analysis = ClipboardAnalysis(dataType: .base64URL)
-        addTextMetrics(to: &analysis, text: original)
-        analysis.set("Decoded Length", "\(decoded.count) bytes")
+        addTextMetrics(to: &analysis, text: decodedString)
+        analysis.set("Encoded Size", "\(original.utf8.count) bytes")
+        analysis.set("Decoded Size", "\(decoded.count) bytes")
         let preview = decodedString.prefix(32)
         analysis.set("Decoded Preview", String(preview) + (decodedString.count > 32 ? "…" : ""))
 
@@ -306,8 +307,9 @@ enum ClipboardAnalyzer {
               isPrintableString(decodedString) else { return nil }
 
         var analysis = ClipboardAnalysis(dataType: .base64)
-        addTextMetrics(to: &analysis, text: original)
-        analysis.set("Decoded Length", "\(decoded.count) bytes")
+        addTextMetrics(to: &analysis, text: decodedString)
+        analysis.set("Encoded Size", "\(original.utf8.count) bytes")
+        analysis.set("Decoded Size", "\(decoded.count) bytes")
         let preview = decodedString.prefix(32)
         analysis.set("Decoded Preview", String(preview) + (decodedString.count > 32 ? "…" : ""))
 
