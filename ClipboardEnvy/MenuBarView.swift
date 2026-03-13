@@ -816,10 +816,11 @@ struct MenuBarView: View {
                     Button("YAML") { setClipboardTo(TestData.yaml) }
                     Button("URL with Params") { setClipboardTo(TestData.urlWithParams) }
                     Button("JWT") { setClipboardTo(TestData.jwt) }
-                    Button("Base64") { setClipboardTo(TestData.base64) }
-                    Button("Base64 URL") { setClipboardTo(TestData.base64URL) }
+                    Button("Base64") { setClipboardTo(ClipboardTransform.base64Encode(TestData.plainText)) }
+                    Button("Base64 URL") { setClipboardTo(ClipboardTransform.base64URLEncode(TestData.plainText)) }
                     Button("URL-encoded") { setClipboardTo(TestData.urlEncoded) }
                     Button("Plain text") { setClipboardTo(TestData.plainText) }
+                    Button("Multiline List (Instruments)") { setClipboardTo(TestData.instrumentsList) }
                     Button("MySQL CLI Table") { setClipboardTo(TestData.mysqlCLI) }
                     Button("psql CLI Table") { setClipboardTo(TestData.psqlCLI) }
                     Button("sqlite3 CLI Table") { setClipboardTo(TestData.sqlite3CLI) }
