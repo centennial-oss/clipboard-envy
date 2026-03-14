@@ -4,8 +4,6 @@ A lightweight, developer-focused macOS Menu Bar-only app for managing and transf
 
 Clipboard Envy is [available in the App Store](https://apps.apple.com/us/app/snipstash/id6759918875) or can be downloaded directly from [this project's releases](https://github.com/centennial-oss/clipboard-envy/releases).
 
-Note: The App Store may temporarily reflect the app's old name, SnipStash.
-
 ## About
 
 Clipboard Envy lives in your Menu Bar so you can capture, store, transform, and recall text snippets without leaving your workflow. It's ideal for developers who use tools like JWT Decoders, SHA-1 Hashers, JSON Minifiers, etc. We have over 100 built-in tools, organized in a coherent, easy-access Menu.
