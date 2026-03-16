@@ -37,7 +37,7 @@ jobs:
             printf 'MARKETING_VERSION = %s\n' "$VERSION"
             printf 'CURRENT_PROJECT_VERSION = %s\n' "$BUILD_NUMBER"
             printf 'INFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Centennial OSS\n'
-          } > "Clipboard Envy/Version.xcconfig"
+          } > "ClipboardEnvy/Version.xcconfig"
 
       - name: Generate build info
         run: |
