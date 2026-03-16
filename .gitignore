@@ -11,8 +11,5 @@ DerivedData/
 *.xcuserstate
 *.xcworkspace/xcuserdata/
 
-# Generated at build time
-ClipboardEnvy/BuildInfo.generated.swift
-
 # local data
 localdata/
