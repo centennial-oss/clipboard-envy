@@ -386,6 +386,12 @@ enum ClipboardAnalyzer {
         guard lines.count >= 2 else { return nil }
 
         let headerLine = lines[0]
+        // If the header already contains tab characters, this is more likely a TSV table;
+        // let the dedicated TSV detector handle it instead of treating it as fixed-width.
+        if headerLine.contains("\t") {
+            return nil
+        }
+
         var headerColumns = splitFixedWidthLine(headerLine)
         var useLooseWhitespaceSplit = false
         if headerColumns.count < 3 {
