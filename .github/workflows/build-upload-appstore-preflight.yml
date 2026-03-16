@@ -14,10 +14,10 @@ jobs:
       APP_NAME: Clipboard Envy
       SCHEME: ClipboardEnvy
       PROJECT: ClipboardEnvy.xcodeproj
-      ARCHIVE_PATH: ${{ runner.temp }}/ClipboardEnvy.xcarchive
-      EXPORT_PATH: ${{ runner.temp }}/export
-      DERIVED_DATA_PATH: ${{ runner.temp }}/DerivedData
-      KEYCHAIN_PATH: ${{ runner.temp }}/ci-signing.keychain-db
+      ARCHIVE_PATH: /tmp/ClipboardEnvy-${{ github.run_id }}-${{ github.run_attempt }}.xcarchive
+      EXPORT_PATH: /tmp/export-${{ github.run_id }}-${{ github.run_attempt }}
+      DERIVED_DATA_PATH: /tmp/DerivedData-${{ github.run_id }}-${{ github.run_attempt }}
+      KEYCHAIN_PATH: /tmp/ci-signing-${{ github.run_id }}-${{ github.run_attempt }}.keychain-db
       ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
       ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
