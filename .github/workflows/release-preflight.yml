@@ -51,24 +51,6 @@ jobs:
             fi
           done
 
-      - name: Set synthetic version/build for preflight
-        run: |
-          VERSION="0.0.0-preflight"
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          {
-            printf 'MARKETING_VERSION = %s\n' "$VERSION"
-            printf 'CURRENT_PROJECT_VERSION = %s\n' "$BUILD_NUMBER"
-            printf 'INFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Centennial OSS\n'
-          } > "ClipboardEnvy/Version.xcconfig"
-
-      - name: Generate build info
-        run: |
-          COMMIT="${{ github.sha }}" \
-          DATE="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")" \
-          CONFIG="Release" \
-          ARCH="arm64" \
-          make generate-build-info
-
       - name: Import signing certificates
         env:
           APPLE_DEVID_CERT_BASE64: ${{ secrets.APPLE_DEVID_CERT_BASE64 }}
@@ -131,6 +113,24 @@ jobs:
           mkdir -p ~/private_keys
           echo "$APP_STORE_CONNECT_API_KEY" | base64 --decode \
             > ~/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
+
+      - name: Set synthetic version/build for preflight
+        run: |
+          VERSION="0.0.0-preflight"
+          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
+          {
+            printf 'MARKETING_VERSION = %s\n' "$VERSION"
+            printf 'CURRENT_PROJECT_VERSION = %s\n' "$BUILD_NUMBER"
+            printf 'INFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Centennial OSS\n'
+          } > "ClipboardEnvy/Version.xcconfig"
+
+      - name: Generate build info
+        run: |
+          COMMIT="${{ github.sha }}" \
+          DATE="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")" \
+          CONFIG="Release" \
+          ARCH="arm64" \
+          make generate-build-info
 
       - name: Archive for App Store preflight
         env:

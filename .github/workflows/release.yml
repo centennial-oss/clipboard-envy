@@ -5,8 +5,6 @@ on:
     tags:
       # Semantic version tags: v1.0.0, v2.1.3, etc.
       - 'v*.*.*'
-      # Also support tags without 'v' prefix: 1.0.0, 2.1.3, etc.
-      - '*.*.*'
 
 permissions:
   contents: write
@@ -59,36 +57,6 @@ jobs:
             fi
           done
 
-      - name: Set version from tag
-        id: version
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          VERSION="${TAG#v}"
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
-          {
-            printf 'MARKETING_VERSION = %s\n' "$VERSION"
-            printf 'CURRENT_PROJECT_VERSION = %s\n' "$BUILD_NUMBER"
-            printf 'INFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Centennial OSS\n'
-          } > "ClipboardEnvy/Version.xcconfig"
-
-      - name: Generate build info
-        run: |
-          COMMIT="${{ github.sha }}" \
-          DATE="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")" \
-          CONFIG="Release" \
-          ARCH="arm64" \
-          make generate-build-info
-
-      - name: Build Clipboard Envy for direct distribution (GitHub release)
-        run: |
-          xcodebuild -scheme ClipboardEnvy \
-            -configuration Release \
-            -derivedDataPath build \
-            -destination 'platform=macOS,arch=arm64' \
-            CODE_SIGN_IDENTITY="-" \
-            clean build
-
       - name: Import signing certificates
         env:
           APPLE_DEVID_CERT_BASE64: ${{ secrets.APPLE_DEVID_CERT_BASE64 }}
@@ -133,12 +101,13 @@ jobs:
             echo "::error::No Developer ID Application identity found in imported certificates."
             exit 1
           fi
-          if ! grep -E "Apple Distribution|Distribution Managed|3rd Party Mac Developer Application" codesign-identities.txt > /dev/null; then
-            echo "::error::No Apple Distribution/3rd Party Mac Developer Application identity found in imported certificates."
+          # Cert names are always prefixed with these strings (e.g. "3rd Party Mac Developer Application: Name (TEAM)")
+          if ! grep -F "3rd Party Mac Developer Application" codesign-identities.txt > /dev/null; then
+            echo "::error::No 3rd Party Mac Developer Application identity found in imported certificates."
             exit 1
           fi
-          if ! grep -E "Mac Installer Distribution|3rd Party Mac Developer Installer" all-identities.txt > /dev/null; then
-            echo "::error::No Mac Installer Distribution/3rd Party Mac Developer Installer identity found in imported certificates."
+          if ! grep -F "3rd Party Mac Developer Installer" all-identities.txt > /dev/null; then
+            echo "::error::No 3rd Party Mac Developer Installer identity found in imported certificates."
             exit 1
           fi
 
@@ -150,6 +119,36 @@ jobs:
           mkdir -p ~/private_keys
           echo "$APP_STORE_CONNECT_API_KEY" | base64 --decode \
             > ~/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
+
+      - name: Set version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          {
+            printf 'MARKETING_VERSION = %s\n' "$VERSION"
+            printf 'CURRENT_PROJECT_VERSION = %s\n' "$BUILD_NUMBER"
+            printf 'INFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Centennial OSS\n'
+          } > "ClipboardEnvy/Version.xcconfig"
+
+      - name: Generate build info
+        run: |
+          COMMIT="${{ github.sha }}" \
+          DATE="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")" \
+          CONFIG="Release" \
+          ARCH="arm64" \
+          make generate-build-info
+
+      - name: Build Clipboard Envy for direct distribution (GitHub release)
+        run: |
+          xcodebuild -scheme ClipboardEnvy \
+            -configuration Release \
+            -derivedDataPath build \
+            -destination 'platform=macOS,arch=arm64' \
+            CODE_SIGN_IDENTITY="-" \
+            clean build
 
       - name: Code sign app (Developer ID - for GitHub release)
         env:
@@ -204,6 +203,8 @@ jobs:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: |
+          # Override project's "Apple Development" with distribution cert to avoid "Mac Development" error in CI.
+          # Prefix matches cert names like "3rd Party Mac Developer Application: Name (TEAM)"
           xcodebuild archive \
             -scheme ClipboardEnvy \
             -configuration Release \
@@ -213,7 +214,9 @@ jobs:
             -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
             -authenticationKeyPath ~/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8 \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="3rd Party Mac Developer Application"
 
       - name: Export and upload to App Store Connect
         env:
@@ -223,7 +226,7 @@ jobs:
         run: |
           # signingStyle=manual: sign locally with the certs imported into the keychain,
           # not via cloud signing (which requires elevated API key permissions).
-          # The provisioning profile is already embedded in the archive from the previous step.
+          # Prefix matches cert names like "3rd Party Mac Developer Application: Name (TEAM)"
           /usr/libexec/PlistBuddy \
             -c "Add :method string app-store-connect" \
             -c "Add :destination string upload" \
