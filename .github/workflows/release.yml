@@ -115,21 +115,28 @@ jobs:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
           set -euo pipefail
-          security find-identity -v -p codesigning build.keychain | tee identities.txt
-          if ! grep -F "$APPLE_SIGNING_IDENTITY" identities.txt > /dev/null; then
+          # Code-signing identities (Developer ID, Apple/3rd-party distribution app certs)
+          security find-identity -v -p codesigning build.keychain | tee codesign-identities.txt
+          # All identities including installer/package certs (not returned by -p codesigning)
+          security find-identity -v build.keychain | tee all-identities.txt
+          echo "--- codesigning identities ---"
+          cat codesign-identities.txt
+          echo "--- all identities ---"
+          cat all-identities.txt
+          if ! grep -F "$APPLE_SIGNING_IDENTITY" codesign-identities.txt > /dev/null; then
             echo "::error::APPLE_SIGNING_IDENTITY not found in build.keychain: $APPLE_SIGNING_IDENTITY"
             exit 1
           fi
-          if ! grep -E "Developer ID Application" identities.txt > /dev/null; then
+          if ! grep -E "Developer ID Application" codesign-identities.txt > /dev/null; then
             echo "::error::No Developer ID Application identity found in imported certificates."
             exit 1
           fi
-          if ! grep -E "Apple Distribution|Distribution Managed" identities.txt > /dev/null; then
-            echo "::error::No Apple Distribution/Distribution Managed identity found in imported certificates."
+          if ! grep -E "Apple Distribution|Distribution Managed|3rd Party Mac Developer Application" codesign-identities.txt > /dev/null; then
+            echo "::error::No Apple Distribution/3rd Party Mac Developer Application identity found in imported certificates."
             exit 1
           fi
-          if ! grep -E "Mac Installer Distribution|Installer Distribution" identities.txt > /dev/null; then
-            echo "::error::No Mac Installer Distribution identity found in imported certificates."
+          if ! grep -E "Mac Installer Distribution|3rd Party Mac Developer Installer" all-identities.txt > /dev/null; then
+            echo "::error::No Mac Installer Distribution/3rd Party Mac Developer Installer identity found in imported certificates."
             exit 1
           fi
 
