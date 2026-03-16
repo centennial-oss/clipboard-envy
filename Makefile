@@ -1,4 +1,4 @@
-.PHONY: build build-release generate-appicons test clean
+.PHONY: build build-release-unsigned generate-appicons test clean
 
 clean:
 	rm -rf build dist
@@ -18,7 +18,7 @@ APPICON_TRANSPARENT_SRC := assets/app-icon-large-transparent.png
 APPICON_TRANSPARENT_128 := assets/app-icon-transparent.png
 APPICON_TRANSPARENT_IMAGESET := ClipboardEnvy/Assets.xcassets/AppIconTransparent.imageset/app-icon-transparent.png
 
-# Override version at build time (e.g. TAGVER=1.0.0-demo make build-release).
+# Override version at build time (e.g. TAGVER=1.0.0-demo make build-release-unsigned).
 # Writes ClipboardEnvy/Version.xcconfig so the app shows this version in About and Info.plist.
 TAGVER ?=
 
@@ -27,21 +27,21 @@ build:
 	@if [ -n "$(TAGVER)" ]; then \
 		printf 'MARKETING_VERSION = %s\nINFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Centennial OSS\n' "$(TAGVER)" > ClipboardEnvy/Version.xcconfig; \
 	fi
-	xcodebuild -scheme ClipboardEnvy -configuration Debug -derivedDataPath build/DerivedData build
+	xcodebuild -scheme ClipboardEnvy -configuration Debug -derivedDataPath build/DerivedData build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 	cp -R "build/DerivedData/Build/Products/Debug/Clipboard Envy.app" build/
 
-build-release:
+build-release-unsigned:
 	mkdir -p dist
 	@if [ -n "$(TAGVER)" ]; then \
 		printf 'MARKETING_VERSION = %s\nINFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Centennial OSS\n' "$(TAGVER)" > ClipboardEnvy/Version.xcconfig; \
 	fi
-	xcodebuild -scheme ClipboardEnvy -configuration Release -derivedDataPath dist/DerivedData build
+	xcodebuild -scheme ClipboardEnvy -configuration Release -derivedDataPath dist/DerivedData build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 	cp -R "dist/DerivedData/Build/Products/Release/Clipboard Envy.app" dist/
 
 # Run Swift tests.
 test:
 	mkdir -p build
-	xcodebuild test -scheme ClipboardEnvy -configuration Debug -derivedDataPath build/DerivedData -destination 'platform=macOS'
+	xcodebuild test -scheme ClipboardEnvy -configuration Debug -derivedDataPath build/DerivedData -destination 'platform=macOS' CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
 # Generate app icon: composite transparent onto background → app-icon-large.png; copy to AppIcon_1024; then resize.
 # Composite uses Swift script (no extra deps on macOS). 16 and 32: center-crop then resize; 64,128,256,512: resize only.

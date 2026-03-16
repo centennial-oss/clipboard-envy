@@ -20,7 +20,7 @@ jobs:
         with:
           xcode-version: 'latest-stable'
 
-      - name: Run clean, test, and build-release
+      - name: Run clean, test, and build-release-unsigned
         run: |
-          make clean test build-release
+          make clean test build-release-unsigned
 
