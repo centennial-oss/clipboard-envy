@@ -239,4 +239,8 @@ cell2a/cell2b/cell2c//cell2e
 cell3a/cell3b/cell3c/cell3d/cell3e
 cell4a/cell4b//cell4d/cell4e
 """
+
+    /// Sample string containing common zero-width characters for testing.
+    /// Includes ZERO WIDTH SPACE, ZERO WIDTH NON-JOINER, ZERO WIDTH JOINER, and ZERO WIDTH NO-BREAK SPACE (BOM).
+    static let zeroWidthSample = "A\u{200B}B\u{200C}C\u{200D}DE"
 }

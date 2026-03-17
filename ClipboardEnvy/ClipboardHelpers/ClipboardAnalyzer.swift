@@ -157,6 +157,12 @@ struct ClipboardAnalysis {
         self["URL Encoded"] == "Yes"
     }
 
+    /// Convenience accessor for counted zero-width characters in the analyzed text.
+    var zeroWidthCharacterCount: Int {
+        guard let value = self["Zero-width Chars"], let n = Int(value) else { return 0 }
+        return n
+    }
+
 }
 
 /// Clipboard content analyzer for type detection and type-specific analysis.
@@ -662,6 +668,12 @@ enum ClipboardAnalyzer {
         if emDashCount > 0 {
             analysis.setTextMetric("Em Dashes", "\(emDashCount)")
         }
+
+        // Count common zero-width characters in the metrics text (always recorded, even when 0)
+        let zeroWidthScalars: [UnicodeScalar] = ["\u{200B}", "\u{200C}", "\u{200D}", "\u{FEFF}"]
+        let zeroWidthSet = CharacterSet(zeroWidthScalars)
+        let zwcCount = metricsText.unicodeScalars.filter { zeroWidthSet.contains($0) }.count
+        analysis.setTextMetric("Zero-width Chars", "\(zwcCount)")
 
         // CRLF flag goes in properties, not text metrics (check original text)
         if text.contains("\r") {

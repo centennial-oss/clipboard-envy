@@ -1176,8 +1176,8 @@ final class ClipboardHelpersTests: XCTestCase {
     }
 
     func testRemoveZeroWidthCharacters() {
-        let input = "a\u{200B}b\u{FEFF}c"
-        XCTAssertEqual(ClipboardTransform.removeZeroWidthCharacters(input), "abc")
+        let input = TestData.zeroWidthSample
+        XCTAssertEqual(ClipboardTransform.removeZeroWidthCharacters(input), "ABCDE")
     }
 
     func testSwapSubstrings_andCustomMultilineSwaps() {
@@ -2139,6 +2139,19 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertEqual(analysis.dataType, .databaseCLITable)
         XCTAssertEqual(analysis.databaseFormat, "sqlite3")
         XCTAssertEqual(analysis["Columns"], "5")
+    }
+
+    func testAnalyzer_zeroWidthCharactersMetrics_fromFile() throws {
+        let content = try readTestdata("sample-zero-width.txt")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .generalText)
+        XCTAssertEqual(analysis["Zero-width Characters"], "3")
+    }
+
+    func testAnalyzer_zeroWidthCharactersMetrics_zeroCase() throws {
+        let content = "No zero-width characters here."
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis["Zero-width Characters"], "0")
     }
 
     func testAnalyzer_urlsFile_firstLineDetectedAsURL() throws {
