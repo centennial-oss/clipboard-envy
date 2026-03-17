@@ -6,8 +6,8 @@
 // before the first generation step is run.
 
 enum BuildInfoGenerated {
-    static let buildCommit = "local"
+    static let buildCommit = "localdev"
     static let buildDate = "1970-01-01T00:00:00.000Z"
-    static let buildConfiguration = "Debug"
-    static let buildArch = "unknown"
+    static let buildConfiguration = "localdev"
+    static let buildArch = "localdev"
 }
