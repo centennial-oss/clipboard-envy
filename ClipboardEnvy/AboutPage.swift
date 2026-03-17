@@ -8,8 +8,11 @@ import AppKit
 
 struct AboutClipboardEnvyView: View {
     private let githubURL = URL(string: "https://github.com/centennial-oss/clipboard-envy")!
+    private let appStoreReviewURL = URL(string: "https://apps.apple.com/us/app/clipboard-envy/id6759918875?action=write-review")!
     private static let windowTitle = "About Clipboard Envy"
     @State private var escapeMonitor: Any? = nil
+    @State private var isGitHubLinkHovered = false
+    @State private var isAppStoreLinkHovered = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -43,11 +46,16 @@ struct AboutClipboardEnvyView: View {
                 .foregroundStyle(.secondary)
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
-            
+
             Link(destination: githubURL) {
                 Label("GitHub: centennial-oss/clipboard-envy", systemImage: "arrow.up.right.square")
+                    .foregroundStyle(Color.accentColor)
+                    .underline(isGitHubLinkHovered, color: Color.accentColor.opacity(0.8))
             }
             .font(.system(size: 15))
+            .onHover { isHovering in
+                isGitHubLinkHovered = isHovering
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Label("Build info (copy for support)", systemImage: "doc.text")
@@ -80,7 +88,16 @@ struct AboutClipboardEnvyView: View {
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack {
+            HStack(spacing: 12) {
+                Link(destination: appStoreReviewURL) {
+                    Label("Rate on the Mac App Store", systemImage: "star.leadinghalf.filled")
+                        .foregroundStyle(Color.accentColor)
+                        .underline(isAppStoreLinkHovered, color: Color.accentColor.opacity(0.8))
+                }
+                .font(.system(size: 14))
+                .onHover { isHovering in
+                    isAppStoreLinkHovered = isHovering
+                }
                 Spacer()
                 Button("Close") {
                     closeAboutWindow()
