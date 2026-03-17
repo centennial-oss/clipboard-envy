@@ -8,7 +8,11 @@ jobs:
     if: github.repository_owner == 'centennial-oss' && github.ref_name == 'main'
     runs-on: macos-14
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      APP_NAME: Clipboard Envy
+      SCHEME_NAME: ClipboardEnvy
+      PROJECT_PATH: ClipboardEnvy.xcodeproj
+      ARCHIVE_PATH: ${{ github.workspace }}/build/ClipboardEnvy-preflight.xcarchive
+      EXPORT_PATH: ${{ github.workspace }}/build/AppStoreExport-preflight
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -138,7 +142,7 @@ jobs:
             printf 'MARKETING_VERSION = %s\n' "$VERSION"
             printf 'CURRENT_PROJECT_VERSION = %s\n' "$BUILD_NUMBER"
             printf 'INFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Centennial OSS\n'
-          } > "ClipboardEnvy/Version.xcconfig"
+          } > "${{ env.SCHEME_NAME }}/Version.xcconfig"
 
       - name: Generate build info
         run: |
@@ -155,9 +159,9 @@ jobs:
           # Manual signing with pre-installed provisioning profile (required for TestFlight).
           # Profile is installed in "Install Mac App Store provisioning profile" step.
           xcodebuild archive \
-            -scheme ClipboardEnvy \
+            -scheme ${{ env.SCHEME_NAME }} \
             -configuration Release \
-            -archivePath build/ClipboardEnvy-preflight.xcarchive \
+            -archivePath ${{ env.ARCHIVE_PATH }} \
             -destination 'generic/platform=macOS' \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             CODE_SIGN_STYLE=Manual \
@@ -180,18 +184,18 @@ jobs:
             /tmp/ExportOptions-preflight.plist
           # -allowProvisioningUpdates not needed: the archive already has the profile embedded.
           xcodebuild -exportArchive \
-            -archivePath build/ClipboardEnvy-preflight.xcarchive \
-            -exportPath build/AppStoreExport-preflight \
+            -archivePath ${{ env.ARCHIVE_PATH }} \
+            -exportPath ${{ env.EXPORT_PATH }} \
             -exportOptionsPlist /tmp/ExportOptions-preflight.plist
 
       - name: Verify exported package exists and is signed
         run: |
           set -euo pipefail
           shopt -s nullglob
-          PKGS=(build/AppStoreExport-preflight/*.pkg)
+          PKGS=("$EXPORT_PATH"/*.pkg)
           if [ ${#PKGS[@]} -eq 0 ]; then
-            echo "::error::No .pkg found in build/AppStoreExport-preflight after export step."
-            ls -la build/AppStoreExport-preflight || true
+            echo "::error::No .pkg found in $EXPORT_PATH after export step."
+            ls -la "$EXPORT_PATH" || true
             exit 1
           fi
           PKG_PATH="${PKGS[0]}"

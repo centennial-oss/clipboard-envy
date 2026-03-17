@@ -13,9 +13,15 @@ jobs:
   build-and-release:
     if: github.repository_owner == 'centennial-oss'
     runs-on: macos-14  # Minimum supported macOS; Apple Silicon runner
+    env:
+      APP_NAME: Clipboard Envy
+      SCHEME_NAME: ClipboardEnvy
+      PROJECT_PATH: ClipboardEnvy.xcodeproj
+      ARCHIVE_PATH: ${{ github.workspace }}/build/ClipboardEnvy.xcarchive
+      EXPORT_PATH: ${{ github.workspace }}/build/AppStoreExport
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -36,6 +42,7 @@ jobs:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          MAC_APP_STORE_PROVISIONING_PROFILE_BASE64: ${{ secrets.MAC_APP_STORE_PROVISIONING_PROFILE_BASE64 }}
         run: |
           set -euo pipefail
           REQUIRED_VARS=(
@@ -49,6 +56,7 @@ jobs:
             APP_STORE_CONNECT_KEY_ID
             APP_STORE_CONNECT_ISSUER_ID
             APP_STORE_CONNECT_API_KEY
+            MAC_APP_STORE_PROVISIONING_PROFILE_BASE64
           )
           for var in "${REQUIRED_VARS[@]}"; do
             if [ -z "${!var:-}" ]; then
@@ -120,6 +128,18 @@ jobs:
           echo "$APP_STORE_CONNECT_API_KEY" | base64 --decode \
             > ~/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
 
+      - name: Install Mac App Store provisioning profile
+        env:
+          MAC_APP_STORE_PROVISIONING_PROFILE_BASE64: ${{ secrets.MAC_APP_STORE_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+          echo "$MAC_APP_STORE_PROVISIONING_PROFILE_BASE64" | base64 --decode > /tmp/profile.provisionprofile
+          PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILE_DIR"
+          UUID=$(security cms -D -i /tmp/profile.provisionprofile 2>/dev/null | plutil -extract UUID raw - 2>/dev/null || echo "mac-app-store")
+          cp /tmp/profile.provisionprofile "$PROFILE_DIR/${UUID}.provisionprofile"
+          echo "Installed provisioning profile: $UUID"
+
       - name: Set version from tag
         id: version
         run: |
@@ -131,7 +151,7 @@ jobs:
             printf 'MARKETING_VERSION = %s\n' "$VERSION"
             printf 'CURRENT_PROJECT_VERSION = %s\n' "$BUILD_NUMBER"
             printf 'INFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Centennial OSS\n'
-          } > "ClipboardEnvy/Version.xcconfig"
+          } > "${{ env.SCHEME_NAME }}/Version.xcconfig"
 
       - name: Generate build info
         run: |
@@ -141,9 +161,9 @@ jobs:
           ARCH="arm64" \
           make generate-build-info
 
-      - name: Build Clipboard Envy for direct distribution (GitHub release)
+      - name: Build ${{ env.APP_NAME }} for direct distribution (GitHub release)
         run: |
-          xcodebuild -scheme ClipboardEnvy \
+          xcodebuild -scheme ${{ env.SCHEME_NAME }} \
             -configuration Release \
             -derivedDataPath build \
             -destination 'platform=macOS,arch=arm64' \
@@ -154,8 +174,8 @@ jobs:
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
-          APP_PATH="build/Build/Products/Release/Clipboard Envy.app"
-          XCENT="build/Build/Intermediates.noindex/ClipboardEnvy.build/Release/ClipboardEnvy.build/Clipboard Envy.app.xcent"
+          APP_PATH="build/Build/Products/Release/${{ env.APP_NAME }}.app"
+          XCENT="build/Build/Intermediates.noindex/${{ env.SCHEME_NAME }}.build/Release/${{ env.SCHEME_NAME }}.build/${{ env.APP_NAME }}.app.xcent"
           ENTITLEMENTS="build/Release.entitlements"
           cp "$XCENT" "$ENTITLEMENTS"
           # get-task-allow is for debugging only; must be false for notarization
@@ -176,7 +196,7 @@ jobs:
             --key-id "$APP_STORE_CONNECT_KEY_ID" \
             --issuer "$APP_STORE_CONNECT_ISSUER_ID"
           cd build/Build/Products/Release
-          ditto -c -k --keepParent "Clipboard Envy.app" notarization.zip
+          ditto -c -k --keepParent "${{ env.APP_NAME }}.app" notarization.zip
           SUBMIT_OUTPUT=$(xcrun notarytool submit notarization.zip --keychain-profile "notarytool-profile" --wait 2>&1)
           echo "$SUBMIT_OUTPUT"
           SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
@@ -187,33 +207,27 @@ jobs:
             echo "--- End log ---"
             exit 1
           fi
-          xcrun stapler staple "Clipboard Envy.app"
+          xcrun stapler staple "${{ env.APP_NAME }}.app"
           rm notarization.zip
 
       - name: Prepare release asset
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
           cd build/Build/Products/Release
-          zip -r "ClipboardEnvy-${VERSION}-macOS-universal.zip" "Clipboard Envy.app"
-          mv "ClipboardEnvy-${VERSION}-macOS-universal.zip" "$GITHUB_WORKSPACE/"
+          zip -r "${{ env.SCHEME_NAME }}-${VERSION}-macOS-universal.zip" "${{ env.APP_NAME }}.app"
+          mv "${{ env.SCHEME_NAME }}-${VERSION}-macOS-universal.zip" "$GITHUB_WORKSPACE/"
 
       - name: Archive for Mac App Store
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: |
-          # Override project's "Apple Development" with distribution cert to avoid "Mac Development" error in CI.
-          # Prefix matches cert names like "3rd Party Mac Developer Application: Name (TEAM)"
+          # Manual signing with pre-installed provisioning profile (required for TestFlight).
+          # Profile is installed in "Install Mac App Store provisioning profile" step.
           xcodebuild archive \
-            -scheme ClipboardEnvy \
+            -scheme ${{ env.SCHEME_NAME }} \
             -configuration Release \
-            -archivePath build/ClipboardEnvy.xcarchive \
+            -archivePath ${{ env.ARCHIVE_PATH }} \
             -destination 'generic/platform=macOS' \
-            -allowProvisioningUpdates \
-            -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
-            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
-            -authenticationKeyPath ~/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8 \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="3rd Party Mac Developer Application"
@@ -238,8 +252,8 @@ jobs:
           # -allowProvisioningUpdates not needed here: the archive already has the profile embedded.
           # The API key flags authenticate the upload-to-App-Store-Connect portion only.
           xcodebuild -exportArchive \
-            -archivePath build/ClipboardEnvy.xcarchive \
-            -exportPath build/AppStoreExport \
+            -archivePath ${{ env.ARCHIVE_PATH }} \
+            -exportPath ${{ env.EXPORT_PATH }} \
             -exportOptionsPlist /tmp/ExportOptions-CI.plist \
             -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
@@ -248,7 +262,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ClipboardEnvy-*-macOS-universal.zip
+          files: ${{ env.SCHEME_NAME }}-*-macOS-universal.zip
           generate_release_notes: true
           draft: true
         env:
