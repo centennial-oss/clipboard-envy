@@ -133,6 +133,7 @@ jobs:
           UUID=$(security cms -D -i /tmp/profile.provisionprofile 2>/dev/null | plutil -extract UUID raw - 2>/dev/null || echo "mac-app-store")
           cp /tmp/profile.provisionprofile "$PROFILE_DIR/${UUID}.provisionprofile"
           echo "Installed provisioning profile: $UUID"
+          echo "MAC_APP_STORE_PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
 
       - name: Set synthetic version/build for preflight
         run: |
@@ -169,6 +170,7 @@ jobs:
             -destination 'generic/platform=macOS' \
             ARCHS="arm64 x86_64" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            PROVISIONING_PROFILE="$MAC_APP_STORE_PROFILE_UUID" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="3rd Party Mac Developer Application"
 
