@@ -144,6 +144,10 @@ jobs:
             printf 'INFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Centennial OSS\n'
           } > "${{ env.SCHEME_NAME }}/Version.xcconfig"
 
+      - name: Sanitize project.pbxproj (remove version overrides)
+        run: |
+          sed -i '' -e '/MARKETING_VERSION/d' -e '/CURRENT_PROJECT_VERSION/d' "$PROJECT_PATH/project.pbxproj"
+
       - name: Generate build info
         run: |
           COMMIT="${{ github.sha }}" \

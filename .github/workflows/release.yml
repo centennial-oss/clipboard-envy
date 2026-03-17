@@ -153,6 +153,10 @@ jobs:
             printf 'INFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Centennial OSS\n'
           } > "${{ env.SCHEME_NAME }}/Version.xcconfig"
 
+      - name: Sanitize project.pbxproj (remove version overrides)
+        run: |
+          sed -i '' -e '/MARKETING_VERSION/d' -e '/CURRENT_PROJECT_VERSION/d' "$PROJECT_PATH/project.pbxproj"
+
       - name: Generate build info
         run: |
           COMMIT="${{ github.sha }}" \
@@ -217,6 +221,14 @@ jobs:
           zip -r "${{ env.SCHEME_NAME }}-${VERSION}-macOS-universal.zip" "${{ env.APP_NAME }}.app"
           mv "${{ env.SCHEME_NAME }}-${VERSION}-macOS-universal.zip" "$GITHUB_WORKSPACE/"
 
+      - name: Make DMG
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          DMG_NAME="${{ env.APP_NAME }}"
+          DMG_FILE="${{ env.SCHEME_NAME }}-${VERSION}-macOS-universal.dmg"
+          hdiutil create -volname "$DMG_NAME" -srcfolder build/Build/Products/Release -ov -format UDZO "$DMG_FILE"
+          mv "$DMG_FILE" "$GITHUB_WORKSPACE/"
+
       - name: Archive for Mac App Store
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -262,7 +274,9 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.SCHEME_NAME }}-*-macOS-universal.zip
+          files: |
+            ${{ env.SCHEME_NAME }}-*-macOS-universal.zip
+            ${{ env.SCHEME_NAME }}-*-macOS-universal.dmg
           generate_release_notes: true
           draft: true
         env:
