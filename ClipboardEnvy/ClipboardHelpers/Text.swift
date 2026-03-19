@@ -480,6 +480,48 @@ extension ClipboardTransform {
         }
     }
 
+    /// Keeps only lines that contain `filter` as a substring.
+    nonisolated static func includeLinesContaining(_ s: String, filter: String) -> String {
+        guard !filter.isEmpty else { return s }
+        return s.components(separatedBy: .newlines)
+            .filter { $0.contains(filter) }
+            .joined(separator: "\n")
+    }
+
+    /// Removes lines that contain `filter` as a substring.
+    nonisolated static func excludeLinesContaining(_ s: String, filter: String) -> String {
+        guard !filter.isEmpty else { return s }
+        return s.components(separatedBy: .newlines)
+            .filter { !$0.contains(filter) }
+            .joined(separator: "\n")
+    }
+
+    /// Custom include filters backed by UserDefaults key `TextLineIncludeFilters` (label → filter string).
+    nonisolated static func customMultilineIncludeFilters() -> [(label: String, filter: String)] {
+        let key = "TextLineIncludeFilters"
+        let defaults = UserDefaults.standard
+        guard let dict = defaults.dictionary(forKey: key) as? [String: String], !dict.isEmpty else {
+            return []
+        }
+        return dict.keys.sorted().compactMap { k in
+            guard let filter = dict[k], !filter.isEmpty else { return nil }
+            return (label: k, filter: filter)
+        }
+    }
+
+    /// Custom exclude filters backed by UserDefaults key `TextLineExcludeFilters` (label → filter string).
+    nonisolated static func customMultilineExcludeFilters() -> [(label: String, filter: String)] {
+        let key = "TextLineExcludeFilters"
+        let defaults = UserDefaults.standard
+        guard let dict = defaults.dictionary(forKey: key) as? [String: String], !dict.isEmpty else {
+            return []
+        }
+        return dict.keys.sorted().compactMap { k in
+            guard let filter = dict[k], !filter.isEmpty else { return nil }
+            return (label: k, filter: filter)
+        }
+    }
+
     /// Replaces all occurrences of `from` with `to` in the string.
     nonisolated static func swapSubstrings(_ s: String, from: String, to: String) -> String {
         guard !from.isEmpty else { return s }

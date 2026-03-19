@@ -1175,6 +1175,51 @@ final class ClipboardHelpersTests: XCTestCase {
         }
     }
 
+    func testIncludeLinesContaining() {
+        let input = "error: one\nok line\nerror: two"
+        let output = ClipboardTransform.includeLinesContaining(input, filter: "error")
+        XCTAssertEqual(output, "error: one\nerror: two")
+    }
+
+    func testExcludeLinesContaining() {
+        let input = "error: one\nok line\nerror: two"
+        let output = ClipboardTransform.excludeLinesContaining(input, filter: "error")
+        XCTAssertEqual(output, "ok line")
+    }
+
+    func testCustomMultilineIncludeExcludeFilters_parseDefaultsDictionaries() {
+        let defaults = UserDefaults.standard
+        let includeKey = "TextLineIncludeFilters"
+        let excludeKey = "TextLineExcludeFilters"
+        let originalIncludes = defaults.dictionary(forKey: includeKey)
+        let originalExcludes = defaults.dictionary(forKey: excludeKey)
+
+        var includeDict = originalIncludes ?? [:]
+        includeDict["ErrorsOnly"] = "error"
+        defaults.set(includeDict, forKey: includeKey)
+
+        var excludeDict = originalExcludes ?? [:]
+        excludeDict["DropDebug"] = "DEBUG"
+        defaults.set(excludeDict, forKey: excludeKey)
+
+        let includes = ClipboardTransform.customMultilineIncludeFilters()
+        let excludes = ClipboardTransform.customMultilineExcludeFilters()
+
+        XCTAssertTrue(includes.contains { $0.label == "ErrorsOnly" && $0.filter == "error" })
+        XCTAssertTrue(excludes.contains { $0.label == "DropDebug" && $0.filter == "DEBUG" })
+
+        if let originalIncludes {
+            defaults.set(originalIncludes, forKey: includeKey)
+        } else {
+            defaults.removeObject(forKey: includeKey)
+        }
+        if let originalExcludes {
+            defaults.set(originalExcludes, forKey: excludeKey)
+        } else {
+            defaults.removeObject(forKey: excludeKey)
+        }
+    }
+
     func testRemoveZeroWidthCharacters() {
         let input = TestData.zeroWidthSample
         XCTAssertEqual(ClipboardTransform.removeZeroWidthCharacters(input), "ABCDE")

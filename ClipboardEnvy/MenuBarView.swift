@@ -758,6 +758,9 @@ struct MenuBarView: View {
             }
 
             Menu("Multi-line") {
+                let includeFilters = ClipboardTransform.customMultilineIncludeFilters()
+                let excludeFilters = ClipboardTransform.customMultilineExcludeFilters()
+                let hasAnyLineFilters = !includeFilters.isEmpty || !excludeFilters.isEmpty
                 Menu("Sort Lines") {
                     Button("Reverse Order") { transformClipboard(ClipboardTransform.reverseLines) }
                     Button("Alphabetically") { transformClipboard(ClipboardTransform.sortLines) }
@@ -766,6 +769,32 @@ struct MenuBarView: View {
                     Button("Shuffle") { transformClipboard(ClipboardTransform.shuffleLines) }
                 }
                 Divider()
+                if hasAnyLineFilters {
+                    Menu("Filter Lines") {
+                        if !includeFilters.isEmpty {
+                            Menu("Include") {
+                                ForEach(includeFilters, id: \.label) { item in
+                                    Button(item.label) {
+                                        transformClipboard {
+                                            ClipboardTransform.includeLinesContaining($0, filter: item.filter)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if !excludeFilters.isEmpty {
+                            Menu("Exclude") {
+                                ForEach(excludeFilters, id: \.label) { item in
+                                    Button(item.label) {
+                                        transformClipboard {
+                                            ClipboardTransform.excludeLinesContaining($0, filter: item.filter)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 Menu("Collapse Lines") {
                     Button("Deduplicate") { transformClipboard(ClipboardTransform.deduplicateLines) }
                     Button("Dedupe + Alpha Sort") { transformClipboard(ClipboardTransform.sortAndDeduplicateLines) }

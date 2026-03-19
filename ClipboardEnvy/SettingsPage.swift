@@ -32,6 +32,7 @@ private struct DictSectionConfig {
 private enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     case general      = "General"
     case soundEffects = "Sound Effects"
+    case filters      = "Filters"
     case removeLines  = "Remove Lines Menu"
     case splitJoin    = "Split / Join Menus"
     case textRemoves  = "Remove Text Menu"
@@ -46,6 +47,7 @@ private enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .general:      return "gearshape"
         case .soundEffects: return "speaker"
+        case .filters:      return "line.3.horizontal.decrease.circle"
         case .argon2:       return "lock.shield"
         case .removeLines:  return "list.number"
         case .splitJoin:    return "scissors"
@@ -420,6 +422,8 @@ struct SettingsClipboardEnvyView: View {
                                     GeneralSettingsView()
                                 case .soundEffects:
                                     SoundEffectsSettingsView()
+                                case .filters:
+                                    FiltersSettingsView()
                                 case .argon2:
                                     Argon2SettingsView()
                                 case .removeLines:
@@ -887,6 +891,198 @@ private struct RemoveLinesSettingsView: View {
             }
         }
         newValueText = ""
+    }
+}
+
+// MARK: - Filters Settings
+
+private struct FiltersSettingsView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                SectionTitle(title: "Filters")
+
+                Text("Custom include/exclude filters for Multi-line → Filter Lines. Each entry adds a menu item that matches lines containing the filter string.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Include")
+                            .font(.system(size: 15, weight: .semibold))
+                        FilterDictTableView(
+                            key: "TextLineIncludeFilters",
+                            valueHeader: "Filter String",
+                            valuePlaceholder: "Only keep lines containing this text"
+                        )
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Exclude")
+                            .font(.system(size: 15, weight: .semibold))
+                        FilterDictTableView(
+                            key: "TextLineExcludeFilters",
+                            valueHeader: "Filter String",
+                            valuePlaceholder: "Drop lines containing this text"
+                        )
+                    }
+                }
+            }
+            .padding(.top, 12)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+private struct FilterDictTableView: View {
+    let key: String
+    let valueHeader: String
+    let valuePlaceholder: String
+
+    @State private var entries: [DictEntry] = []
+    @State private var newLabel: String = ""
+    @State private var newValue: String = ""
+
+    private var canAdd: Bool {
+        !newLabel.trimmingCharacters(in: .whitespaces).isEmpty
+        && !newValue.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        SettingsCard {
+            VStack(alignment: .leading, spacing: 0) {
+                if !entries.isEmpty {
+                    HStack(spacing: 0) {
+                        Text("Menu Label")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 180, alignment: .leading)
+                        columnSeparator
+                        Text(valueHeader)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 8)
+                        Color.clear.frame(width: 30)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    .padding(.bottom, 6)
+
+                    Divider()
+
+                    ForEach($entries) { $entry in
+                        VStack(spacing: 0) {
+                            HStack(spacing: 0) {
+                                TextField("Menu Label", text: $entry.label)
+                                    .textFieldStyle(.plain)
+                                    .frame(width: 180)
+                                    .onChange(of: entry.label) { _, _ in save() }
+                                columnSeparator
+                                TextField(valuePlaceholder, text: $entry.value)
+                                    .textFieldStyle(.plain)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.leading, 8)
+                                    .onChange(of: entry.value) { _, _ in save() }
+                                Button {
+                                    withAnimation(.spring(duration: 0.2)) {
+                                        entries.removeAll { $0.id == entry.id }
+                                        save()
+                                    }
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(.red.opacity(0.75))
+                                }
+                                .buttonStyle(.plain)
+                                .frame(width: 30)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            if entry.id != entries.last?.id {
+                                Divider().padding(.leading, 16)
+                            }
+                        }
+                    }
+                    Divider()
+                }
+
+                HStack(spacing: 0) {
+                    TextField("Menu Label", text: $newLabel)
+                        .textFieldStyle(.plain)
+                        .frame(width: 150)
+                        .onSubmit { if canAdd { addEntry() } }
+                    columnSeparator
+                    TextField(valuePlaceholder, text: $newValue)
+                        .textFieldStyle(.plain)
+                        .frame(maxWidth: .infinity)
+                        .padding(.leading, 8)
+                        .onSubmit { if canAdd { addEntry() } }
+                    Button("Add") { addEntry() }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
+                        .controlSize(.small)
+                        .disabled(!canAdd)
+                        .frame(width: 46)
+                        .padding(.leading, 8)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(entries.isEmpty ? Color.clear : Color(nsColor: .controlBackgroundColor).opacity(0.4))
+            }
+        }
+        .onAppear { loadEntries() }
+        .onChange(of: key) { _, _ in
+            newLabel = ""
+            newValue = ""
+            loadEntries()
+        }
+    }
+
+    private var columnSeparator: some View {
+        Rectangle()
+            .fill(Color(nsColor: .separatorColor))
+            .frame(width: 1)
+            .padding(.vertical, 4)
+    }
+
+    private func loadEntries() {
+        guard let dict = UserDefaults.standard.dictionary(forKey: key) as? [String: String] else {
+            entries = []
+            return
+        }
+        entries = dict.map { DictEntry(label: $0.key, value: $0.value) }
+            .sorted { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
+    }
+
+    private func save() {
+        var dict: [String: String] = [:]
+        for entry in entries {
+            let label = entry.label.trimmingCharacters(in: .whitespaces)
+            let value = entry.value
+            if !label.isEmpty, !value.isEmpty {
+                dict[label] = value
+            }
+        }
+        if dict.isEmpty {
+            UserDefaults.standard.removeObject(forKey: key)
+        } else {
+            UserDefaults.standard.set(dict, forKey: key)
+        }
+    }
+
+    private func addEntry() {
+        let label = newLabel.trimmingCharacters(in: .whitespaces)
+        let value = newValue
+        guard !label.isEmpty, !value.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        withAnimation(.spring(duration: 0.2)) {
+            entries.append(DictEntry(label: label, value: value))
+            save()
+        }
+        newLabel = ""
+        newValue = ""
     }
 }
 
