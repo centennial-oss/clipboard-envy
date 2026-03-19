@@ -29,6 +29,10 @@ struct MenuBarView: View {
         condition ? "\(base)\(TransformMenuTitles.sparkleSuffix)" : base
     }
 
+    private func symbolMenuLabel(symbol: String, name: String, padding: String = "") -> String {
+        "\(symbol)  \(padding)\(name)"
+    }
+
     @ViewBuilder
     private func toggleVisibility<Content: View>(_ isHidden: Bool, @ViewBuilder _ content: () -> Content) -> some View {
         if isHidden {
@@ -1203,97 +1207,98 @@ struct MenuBarView: View {
             }
             Menu("Symbol") {
                 Menu("General") {
-                    Button("Em dash —") { setClipboardTo("—") }
-                    Button("En dash –") { setClipboardTo("–") }
-                    Button("Ellipsis …") { setClipboardTo("…") }
+                    Button(symbolMenuLabel(symbol: "—", name: "Em dash")) { setClipboardTo("—") }
+                    Button(symbolMenuLabel(symbol: "–", name: "En dash", padding: " ")) { setClipboardTo("–") }
+                    Button(symbolMenuLabel(symbol: "…", name: "Ellipsis")) { setClipboardTo("…") }
+                    Button(symbolMenuLabel(symbol: "¶", name: "Pilcrow")) { setClipboardTo("¶") }
+                    Button(symbolMenuLabel(symbol: "\u{00A0}", name: "NBSP", padding: "  ")) { setClipboardTo("\u{00A0}") }
                 }
                 Menu("Keyboard") {
-                    Button("Command ⌘") { setClipboardTo("⌘") }
-                    Button("Option ⌥") { setClipboardTo("⌥") }
-                    Button("Shift ⇧") { setClipboardTo("⇧") }
-                    Button("Return ⏎") { setClipboardTo("⏎") }
-                    Button("Control ⌃") { setClipboardTo("⌃") }
-                    Button("Caps Lock ⇪") { setClipboardTo("⇪") }
-                    Button("Tab ⇥") { setClipboardTo("⇥") }
+                    Button(symbolMenuLabel(symbol: "⌘", name: "Command")) { setClipboardTo("⌘") }
+                    Button(symbolMenuLabel(symbol: "⊞", name: "Windows")) { setClipboardTo("⊞") }
+                    Button(symbolMenuLabel(symbol: "⌥", name: "Option/Alt")) { setClipboardTo("⌥") }
+                    Button(symbolMenuLabel(symbol: "⌃", name: "Control")) { setClipboardTo("⌃") }
+                    Button(symbolMenuLabel(symbol: "⎋", name: "Escape")) { setClipboardTo("⎋") }
+                    Button(symbolMenuLabel(symbol: "⇧", name: "Shift")) { setClipboardTo("⇧") }
+                    Button(symbolMenuLabel(symbol: "⇪", name: "Caps Lock")) { setClipboardTo("⇪") }
                     Divider()
-                    Button("Escape ⎋") { setClipboardTo("⎋") }
-                    Button("Backspace ⌫") { setClipboardTo("⌫") }
-                    Button("Delete ⌦") { setClipboardTo("⌦") }
-                    Button("Enter ⌅") { setClipboardTo("⌅") }
-                    Button("Clear ⌧") { setClipboardTo("⌧") }
+                    Button(symbolMenuLabel(symbol: "⇥", name: "Tab")) { setClipboardTo("⇥") }
+                    Button(symbolMenuLabel(symbol: "⏎", name: "Return")) { setClipboardTo("⏎") }
+                    Button(symbolMenuLabel(symbol: "⌫", name: "Backspace")) { setClipboardTo("⌫") }
+                    Button(symbolMenuLabel(symbol: "⌦", name: "Delete")) { setClipboardTo("⌦") }
+                    Button(symbolMenuLabel(symbol: "⌧", name: "Clear")) { setClipboardTo("⌧") }
                 }
                 Menu("Shapes") {
-                    Button("Check mark ✓") { setClipboardTo("✓") }
-                    Button("Middle dot ·") { setClipboardTo("·") }
-                    Button("Bullet •") { setClipboardTo("•") }
-                    Button("Open Bullet ◦") { setClipboardTo("◦") }
-                    Button("Lg Bullet ●") { setClipboardTo("●") }
-                    Button("Lg Open Bullet ○") { setClipboardTo("○") }
-                    Button("Square Bullet ▪") { setClipboardTo("▪") }
-                    Button("Open Square ▫") { setClipboardTo("▫") }
-                    Button("Triangle Bullet ▸") { setClipboardTo("▸") }
-                    Button("Lg Triangle Bullet ▶") { setClipboardTo("▶") }
-                    Button("Diamond Bullet ◆") { setClipboardTo("◆") }
-                    Button("Filled Star ★") { setClipboardTo("★") }
-                    Button("Open Star ☆") { setClipboardTo("☆") }
+                    Button(symbolMenuLabel(symbol: "✓", name: "Check mark")) { setClipboardTo("✓") }
+                    Button(symbolMenuLabel(symbol: "×", name: "X Mark")) { setClipboardTo("×") }
+                    Divider()
+                    Button(symbolMenuLabel(symbol: "·", name: "Middle dot", padding: "  ")) { setClipboardTo("·") }
+                    Button(symbolMenuLabel(symbol: "•", name: "Bullet", padding: " ")) { setClipboardTo("•") }
+                    Button(symbolMenuLabel(symbol: "◦", name: "Open Bullet", padding: " ")) { setClipboardTo("◦") }
+                    Button(symbolMenuLabel(symbol: "●", name: "Lg Bullet")) { setClipboardTo("●") }
+                    Button(symbolMenuLabel(symbol: "○", name: "Lg Open Bullet")) { setClipboardTo("○") }
+                    Divider()
+                    Button(symbolMenuLabel(symbol: "▪", name: "Square Bullet")) { setClipboardTo("▪") }
+                    Button(symbolMenuLabel(symbol: "▫", name: "Open Square")) { setClipboardTo("▫") }
+                    Divider()
+                    Button(symbolMenuLabel(symbol: "▸", name: "Triangle Bullet", padding: " ")) { setClipboardTo("▸") }
+                    Button(symbolMenuLabel(symbol: "▶", name: "Lg Triangle Bullet")) { setClipboardTo("▶") }
+                    Divider()
+                    Button(symbolMenuLabel(symbol: "◆", name: "Diamond Bullet")) { setClipboardTo("◆") }
+                    Button(symbolMenuLabel(symbol: "★", name: "Filled Star")) { setClipboardTo("★") }
+                    Button(symbolMenuLabel(symbol: "☆", name: "Open Star")) { setClipboardTo("☆") }
                 }
                 Menu("Math") {
-                    Button("Squared ²") { setClipboardTo("²") }
-                    Button("Cubed ³") { setClipboardTo("³") }
-                    Button("Subscript 2 ₂") { setClipboardTo("₂") }
-                    Button("Subscript 3 ₃") { setClipboardTo("₃") }
+                    Button(symbolMenuLabel(symbol: "²", name: "Squared")) { setClipboardTo("²") }
+                    Button(symbolMenuLabel(symbol: "³", name: "Cubed")) { setClipboardTo("³") }
+                    Button(symbolMenuLabel(symbol: "₂", name: "Subscript 2")) { setClipboardTo("₂") }
+                    Button(symbolMenuLabel(symbol: "₃", name: "Subscript 3")) { setClipboardTo("₃") }
                     Divider()
-                    Button("Plus-minus ±") { setClipboardTo("±") }
-                    Button("Multiply ×") { setClipboardTo("×") }
-                    Button("Divide ÷") { setClipboardTo("÷") }
+                    Button(symbolMenuLabel(symbol: "±", name: "Plus-minus")) { setClipboardTo("±") }
+                    Button(symbolMenuLabel(symbol: "×", name: "Multiply")) { setClipboardTo("×") }
+                    Button(symbolMenuLabel(symbol: "÷", name: "Divide")) { setClipboardTo("÷") }
                     Divider()
-                    Button("Not equal ≠") { setClipboardTo("≠") }
-                    Button("Approximately ≈") { setClipboardTo("≈") }
-                    Button("Less-or-equal ≤") { setClipboardTo("≤") }
-                    Button("Greater-or-equal ≥") { setClipboardTo("≥") }
+                    Button(symbolMenuLabel(symbol: "≠", name: "Not equal")) { setClipboardTo("≠") }
+                    Button(symbolMenuLabel(symbol: "≈", name: "Approximately")) { setClipboardTo("≈") }
+                    Button(symbolMenuLabel(symbol: "≤", name: "Less-or-equal")) { setClipboardTo("≤") }
+                    Button(symbolMenuLabel(symbol: "≥", name: "Greater-or-equal")) { setClipboardTo("≥") }
                     Divider()
-                    Button("Infinity ∞") { setClipboardTo("∞") }
+                    Button(symbolMenuLabel(symbol: "∞", name: "Infinity")) { setClipboardTo("∞") }
                 }
                 Menu("Legal") {
-                    Button("Copyright ©") { setClipboardTo("©") }
-                    Button("Registered ®") { setClipboardTo("®") }
-                    Button("Trademark ™") { setClipboardTo("™") }
-                    Button("Section §") { setClipboardTo("§") }
-                }
-                Menu("Spaces") {
-                    Button("Tab") { setClipboardTo("\t") }
-                    Button("Non-breaking") { setClipboardTo("\u{00A0}") }
-                    Button("Pilcrow ¶") { setClipboardTo("¶") }
+                    Button(symbolMenuLabel(symbol: "©", name: "Copyright")) { setClipboardTo("©") }
+                    Button(symbolMenuLabel(symbol: "®", name: "Registered")) { setClipboardTo("®") }
+                    Button(symbolMenuLabel(symbol: "™", name: "Trademark")) { setClipboardTo("™") }
+                    Button(symbolMenuLabel(symbol: "§", name: "Section", padding: " ")) { setClipboardTo("§") }
                 }
                 Menu("Arrows") {
-                    Button("Right →") { setClipboardTo("→") }
-                    Button("Left ←") { setClipboardTo("←") }
-                    Button("Up ↑") { setClipboardTo("↑") }
-                    Button("Down ↓") { setClipboardTo("↓") }
-                    Button("Upper-Left ↖") { setClipboardTo("↖") }
-                    Button("Upper-Right ↗") { setClipboardTo("↗") }
-                    Button("Lower-Left ↙") { setClipboardTo("↙") }
-                    Button("Lower-Right ↘") { setClipboardTo("↘") }
-                    Button("Right double ⇒") { setClipboardTo("⇒") }
-                    Button("Left double ⇐") { setClipboardTo("⇐") }
+                    Button(symbolMenuLabel(symbol: "→", name: "Right")) { setClipboardTo("→") }
+                    Button(symbolMenuLabel(symbol: "←", name: "Left")) { setClipboardTo("←") }
+                    Button(symbolMenuLabel(symbol: "↑", name: "Up")) { setClipboardTo("↑") }
+                    Button(symbolMenuLabel(symbol: "↓", name: "Down")) { setClipboardTo("↓") }
+                    Button(symbolMenuLabel(symbol: "↖", name: "Upper-Left")) { setClipboardTo("↖") }
+                    Button(symbolMenuLabel(symbol: "↗", name: "Upper-Right")) { setClipboardTo("↗") }
+                    Button(symbolMenuLabel(symbol: "↙", name: "Lower-Left")) { setClipboardTo("↙") }
+                    Button(symbolMenuLabel(symbol: "↘", name: "Lower-Right")) { setClipboardTo("↘") }
+                    Button(symbolMenuLabel(symbol: "⇒", name: "Right double")) { setClipboardTo("⇒") }
+                    Button(symbolMenuLabel(symbol: "⇐", name: "Left double")) { setClipboardTo("⇐") }
                 }
                 Menu("Units") {
-                    Button("Degrees °") { setClipboardTo("°") }
-                    Button("Micro µ") { setClipboardTo("µ") }
-                    Button("Per mille ‰") { setClipboardTo("‰") }
-                    Button("Basis pts. ‱") { setClipboardTo("‱") }
+                    Button(symbolMenuLabel(symbol: "°", name: "Degrees")) { setClipboardTo("°") }
+                    Button(symbolMenuLabel(symbol: "µ", name: "Micro")) { setClipboardTo("µ") }
                     Divider()
-                    Section("Currency") {
-                        Button("Euro €") { setClipboardTo("€") }
-                        Button("Pound £") { setClipboardTo("£") }
-                        Button("Yen/Yuan ¥") { setClipboardTo("¥") }
-                        Button("Rupee ₹") { setClipboardTo("¢") }
-                        Button("Won ₩") { setClipboardTo("¢") }
-                        Button("Baht ฿") { setClipboardTo("¢") }
-                        Button("BTC ₿") { setClipboardTo("¢") }
-                        Button("Dollar $") { setClipboardTo("$") }
-                        Button("Cent ¢") { setClipboardTo("¢") }
-                    }
+                    Button(symbolMenuLabel(symbol: "‰", name: "Per mille")) { setClipboardTo("‰") }
+                    Button(symbolMenuLabel(symbol: "‱", name: "Basis pts.")) { setClipboardTo("‱") }
+                    Divider()
+                    Button(symbolMenuLabel(symbol: "€", name: "Euro")) { setClipboardTo("€") }
+                    Button(symbolMenuLabel(symbol: "£", name: "Pound")) { setClipboardTo("£") }
+                    Button(symbolMenuLabel(symbol: "¥", name: "Yen/Yuan")) { setClipboardTo("¥") }
+                    Button(symbolMenuLabel(symbol: "₹", name: "Rupee")) { setClipboardTo("¢") }
+                    Button(symbolMenuLabel(symbol: "₩", name: "Won")) { setClipboardTo("¢") }
+                    Button(symbolMenuLabel(symbol: "฿", name: "Baht")) { setClipboardTo("¢") }
+                    Button(symbolMenuLabel(symbol: "₿", name: "BTC")) { setClipboardTo("¢") }
+                    Button(symbolMenuLabel(symbol: "$", name: "Dollar")) { setClipboardTo("$") }
+                    Button(symbolMenuLabel(symbol: "¢", name: "Cent")) { setClipboardTo("¢") }
                 }
             }
             Menu("Random") {
