@@ -28,12 +28,18 @@ struct SnippetEditorView: View {
         text.unicodeScalars.filter { $0 == "\u{2014}" }.count
     }
 
-    init(snippet: Snippet?, onSave: @escaping (String, String?) -> Void, onSaveAndSetClipboard: ((String, String?) -> Void)? = nil, onCancel: @escaping () -> Void) {
+    init(
+        snippet: Snippet?,
+        initialBodyForNew: String = "",
+        onSave: @escaping (String, String?) -> Void,
+        onSaveAndSetClipboard: ((String, String?) -> Void)? = nil,
+        onCancel: @escaping () -> Void
+    ) {
         self.snippet = snippet
         self.onSave = onSave
         self.onSaveAndSetClipboard = onSaveAndSetClipboard
         self.onCancel = onCancel
-        _text = State(initialValue: snippet?.body ?? "")
+        _text = State(initialValue: snippet?.body ?? initialBodyForNew)
         _title = State(initialValue: snippet?.title ?? "")
     }
 

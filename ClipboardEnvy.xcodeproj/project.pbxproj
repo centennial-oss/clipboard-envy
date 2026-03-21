@@ -535,8 +535,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/P-H-C/phc-winner-argon2.git";
 			requirement = {
-				branch = master;
-				kind = branch;
+				kind = revision;
+				revision = f57e61e19229e23c4445b85494dbf7c07de721cb;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

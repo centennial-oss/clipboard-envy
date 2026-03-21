@@ -1,7 +1,7 @@
 .PHONY: build build-release-unsigned generate-appicons test clean generate-build-info
 
 clean:
-	rm -rf build dist
+	@rm -rf build dist ; rm -rf ~/Library/Developer/Xcode/DerivedData/ClipboardEnvy-*
 
 # App icon pipeline:
 #   1. Composite assets/app-icon-large-transparent.png over assets/app-icon-background-large.png → assets/app-icon-large.png

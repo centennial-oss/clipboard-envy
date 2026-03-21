@@ -1359,13 +1359,20 @@ struct MenuBarView: View {
         }
         Divider()
         Button("New Snippet") {
+            editorStore.pendingNewSnippetPrefill = ""
             editorStore.editingSnippet = nil
+            editorStore.newSnippetEditorSession &+= 1
             openWindow(id: "editor")
             DispatchQueue.main.async {
                 NSApp.activate(ignoringOtherApps: true)
             }
         }
         Button("Clipboard → New Snippet", action: quickSaveFromClipboard)
+            .modifierKeyAlternate(.option) {
+                Button("Clipboard → New Editor") {
+                    openNewEditorFromClipboard()
+                }
+            }
         Divider()
         if displayedSnippets.isEmpty {
             Text("No snippets yet")
@@ -1455,6 +1462,16 @@ struct MenuBarView: View {
             ClipboardSound.playClipboardWritten(muted: muteSounds)
         } else {
             ClipboardSound.playClipboardError(muted: muteSounds)
+        }
+    }
+
+    private func openNewEditorFromClipboard() {
+        editorStore.pendingNewSnippetPrefill = ClipboardIO.readString() ?? ""
+        editorStore.editingSnippet = nil
+        editorStore.newSnippetEditorSession &+= 1
+        openWindow(id: "editor")
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 

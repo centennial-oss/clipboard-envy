@@ -13,7 +13,7 @@ struct EditorWindowRoot: View {
     var body: some View {
         Group {
             if let snippet = editorStore.editingSnippet {
-                SnippetEditorView(snippet: snippet, onSave: { body, title in
+                SnippetEditorView(snippet: snippet, initialBodyForNew: "", onSave: { body, title in
                     saveSnippet(snippet: snippet, body: body, title: title)
                     dismiss()
                 }, onSaveAndSetClipboard: { body, title in
@@ -25,7 +25,7 @@ struct EditorWindowRoot: View {
                 })
                 .id(snippet.id)
             } else {
-                SnippetEditorView(snippet: nil, onSave: { body, title in
+                SnippetEditorView(snippet: nil, initialBodyForNew: editorStore.pendingNewSnippetPrefill, onSave: { body, title in
                     let new = Snippet(body: body, title: title, timestamp: Date())
                     modelContext.insert(new)
                     snippetsStore.refresh()
@@ -39,7 +39,7 @@ struct EditorWindowRoot: View {
                 }, onCancel: {
                     dismiss()
                 })
-                .id("new")
+                .id("new-\(editorStore.newSnippetEditorSession)")
             }
         }
         .onAppear {
