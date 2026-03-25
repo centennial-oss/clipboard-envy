@@ -1314,6 +1314,21 @@ struct MenuBarView: View {
                     Button(symbolMenuLabel(symbol: "⇒", name: "Right double")) { setClipboardTo("⇒") }
                     Button(symbolMenuLabel(symbol: "⇐", name: "Left double")) { setClipboardTo("⇐") }
                 }
+                Menu("Music") {
+                    Button(symbolMenuLabel(symbol: "𝄞", name: "Treble Clef")) { setClipboardTo("𝄞") }
+                    Button(symbolMenuLabel(symbol: "𝄢", name: "Bass Clef")) { setClipboardTo("𝄢") }
+                    Button(symbolMenuLabel(symbol: "𝄡", name: "C Clef")) { setClipboardTo("𝄡") }
+                    Divider()
+                    Button(symbolMenuLabel(symbol: "♭", name: "Flat")) { setClipboardTo("♭") }
+                    Button(symbolMenuLabel(symbol: "♯", name: "Sharp")) { setClipboardTo("♯") }
+                    Button(symbolMenuLabel(symbol: "♮", name: "Natural")) { setClipboardTo("♮") }
+                    Button(symbolMenuLabel(symbol: "𝄫", name: "Double Flat")) { setClipboardTo("𝄫") }
+                    Button(symbolMenuLabel(symbol: "𝄪", name: "Double Sharp")) { setClipboardTo("𝄪") }
+                    Divider()
+                    Button(symbolMenuLabel(symbol: "𝄐", name: "Fermata")) { setClipboardTo("𝄐") }
+                    Button(symbolMenuLabel(symbol: "𝄑", name: "Fermata 2")) { setClipboardTo("𝄑") }
+                    Button(symbolMenuLabel(symbol: "𝄒", name: "Breath Mark")) { setClipboardTo("𝄒") }
+                }
                 Menu("Units") {
                     Button(symbolMenuLabel(symbol: "°", name: "Degrees")) { setClipboardTo("°") }
                     Button(symbolMenuLabel(symbol: "µ", name: "Micro")) { setClipboardTo("µ") }
