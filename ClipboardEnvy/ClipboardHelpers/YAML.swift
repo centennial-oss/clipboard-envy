@@ -211,7 +211,17 @@ enum YAMLHelpers {
     nonisolated static func parseYAML(_ s: String) -> Any? {
         let lines = s.components(separatedBy: .newlines)
         var i = 0
-        return parseYAMLBlock(lines, &i, baseIndent: 0)
+        return parseYAMLBlock(lines, &i, baseIndent: 0, strict: false)
+    }
+
+    /// True when the string parses as a block YAML mapping or list under the same rules as ``parseYAML``,
+    /// but every non-empty, non-comment line must be structural YAML and mapping keys must look like YAML keys
+    /// (not arbitrary `foo: bar` fragments from Swift or other languages).
+    nonisolated static func parsesAsStructuredYAMLDocument(_ s: String) -> Bool {
+        let lines = s.components(separatedBy: .newlines)
+        var i = 0
+        guard let value = parseYAMLBlock(lines, &i, baseIndent: 0, strict: true) else { return false }
+        return value is [String: Any] || value is [Any]
     }
 
     nonisolated static func anyToJSONCompatible(_ value: Any) -> Any {
@@ -227,7 +237,31 @@ enum YAMLHelpers {
         }
     }
 
-    private nonisolated static func parseYAMLBlock(_ lines: [String], _ index: inout Int, baseIndent: Int) -> Any? {
+    /// Unquoted mapping keys we accept for clipboard YAML detection (avoids Swift `foo(bar: x, name: y)` false positives).
+    private nonisolated static func isStructuredYAMLPlainKey(_ key: String) -> Bool {
+        let k = key.trimmingCharacters(in: .whitespaces)
+        guard !k.isEmpty else { return false }
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_-."))
+        return k.unicodeScalars.allSatisfy { allowed.contains($0) }
+    }
+
+    private nonisolated static func isStructuredYAMLMappingKey(_ key: String) -> Bool {
+        let k = key.trimmingCharacters(in: .whitespaces)
+        guard !k.isEmpty else { return false }
+        if k.count >= 2, k.first == "\"", k.last == "\"" { return true }
+        if k.count >= 2, k.first == "'", k.last == "'" { return true }
+        return isStructuredYAMLPlainKey(k)
+    }
+
+    /// Document/stream lines that are valid YAML but not mappings or list entries (e.g. ``---``).
+    nonisolated static func isYAMLStreamMarkerLine(_ trimmed: String) -> Bool {
+        if trimmed == "..." { return true }
+        guard trimmed.hasPrefix("---") else { return false }
+        let after = trimmed.dropFirst(3).trimmingCharacters(in: .whitespaces)
+        return after.isEmpty || after.hasPrefix("#")
+    }
+
+    private nonisolated static func parseYAMLBlock(_ lines: [String], _ index: inout Int, baseIndent: Int, strict: Bool) -> Any? {
         var map: [String: Any] = [:]
         var list: [Any] = []
         var isList = false
@@ -235,6 +269,7 @@ enum YAMLHelpers {
             let line = lines[index]
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty || trimmed.hasPrefix("#") { index += 1; continue }
+            if isYAMLStreamMarkerLine(trimmed) { index += 1; continue }
             let lead = line.prefix(while: { $0 == " " }).count
             if lead < baseIndent { break }
             let content = String(line.dropFirst(lead))
@@ -249,20 +284,29 @@ enum YAMLHelpers {
                 }
                 index += 1
                 let nextLead = (index < lines.count) ? lines[index].prefix(while: { $0 == " " }).count : 0
-                if itemStr.isEmpty, nextLead > lead, index < lines.count, let sub = parseYAMLBlock(lines, &index, baseIndent: nextLead) {
-                    list.append(sub)
+                if itemStr.isEmpty, nextLead > lead, index < lines.count {
+                    if let sub = parseYAMLBlock(lines, &index, baseIndent: nextLead, strict: strict) {
+                        list.append(sub)
+                    } else if strict {
+                        return nil
+                    } else {
+                        list.append(parseYAMLScalar(itemStr))
+                    }
                 } else {
                     list.append(parseYAMLScalar(itemStr))
                 }
             } else if let colonIdx = contentTrimmed.firstIndex(of: ":") {
                 let key = String(contentTrimmed[..<colonIdx]).trimmingCharacters(in: .whitespaces)
                 let rest = String(contentTrimmed[contentTrimmed.index(after: colonIdx)...]).trimmingCharacters(in: .whitespaces)
+                if strict, !isStructuredYAMLMappingKey(key) { return nil }
                 index += 1
                 if rest.isEmpty {
                     let nextLead = (index < lines.count) ? lines[index].prefix(while: { $0 == " " }).count : 0
                     if nextLead > lead, index < lines.count {
-                        if let sub = parseYAMLBlock(lines, &index, baseIndent: nextLead) {
+                        if let sub = parseYAMLBlock(lines, &index, baseIndent: nextLead, strict: strict) {
                             map[key] = sub
+                        } else if strict {
+                            return nil
                         }
                     } else {
                         map[key] = NSNull()
@@ -271,6 +315,7 @@ enum YAMLHelpers {
                     map[key] = parseYAMLScalar(rest)
                 }
             } else {
+                if strict { return nil }
                 index += 1
             }
         }

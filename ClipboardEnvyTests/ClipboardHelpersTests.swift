@@ -2141,6 +2141,51 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertEqual(analysis["Structure"], "Object")
     }
 
+    func testAnalyzer_yamlWithDocumentStartMarker() {
+        let content = """
+        ---
+        frontend:
+          listen_port: 8480
+        backends:
+          default:
+            provider: prometheus
+            origin_url: http://prometheus:9090
+            is_default: true
+        """
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .yaml)
+        XCTAssertEqual(analysis["Structure"], "Object")
+    }
+
+    func testAnalyzer_yamlWithSentenceLikeCommentsStillYAML() {
+        // Regression: looksLikeProse on the full buffer matched `. ` + capital inside `#` lines and skipped YAML.
+        let content = """
+        # This file is large. If you edit it, be careful. Trickster uses this format.
+        # Some docs. Another sentence starts here.
+        frontend:
+          listen_port: 8480
+        backends:
+          default:
+            provider: prometheus
+            origin_url: http://prometheus:9090
+            is_default: true
+        """
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .yaml)
+        XCTAssertEqual(analysis["Structure"], "Object")
+    }
+
+    func testAnalyzer_swiftSnippetWithKeyedArgumentsIsNotYAML() {
+        let swift = """
+                Menu("Typography") {
+                    Button(symbolMenuLabel(symbol: "—", name: "Em dash")) { setClipboardTo("—") }
+                    Button(symbolMenuLabel(symbol: "–", name: "En dash", padding: " ")) { setClipboardTo("–") }
+                }
+                """
+        let analysis = ClipboardAnalyzer.analyze(swift)
+        XCTAssertEqual(analysis.dataType, .generalText)
+    }
+
     func testAnalyzer_base64File() throws {
         let content = try readTestdata("tell-tale-heart-base64.txt")
         let analysis = ClipboardAnalyzer.analyze(content)
@@ -2189,6 +2234,28 @@ final class ClipboardHelpersTests: XCTestCase {
         let content = "a\nb\nc\nd\ne\nf"
         let analysis = ClipboardAnalyzer.analyze(content, clipboardPreviewMaxLines: 2)
         XCTAssertEqual(analysis.previewLines, ["a", "b"])
+    }
+
+    func testAnalyzer_displayPreview_stripsCommonLeadingSpaces() {
+        let content = "    alpha\n    beta\n    gamma"
+        let analysis = ClipboardAnalyzer.analyze(content, menuLabelMaxChars: 36)
+        XCTAssertEqual(analysis.previewLines, ["alpha", "beta", "gamma"])
+    }
+
+    func testAnalyzer_displayPreview_stripsCommonLeadingTabs() {
+        let content = "\t\tfoo\n\t\tbar"
+        let analysis = ClipboardAnalyzer.analyze(content, menuLabelMaxChars: 36)
+        XCTAssertEqual(analysis.previewLines, ["foo", "bar"])
+    }
+
+    func testAnalyzer_displayPreview_stripsCommonIndentBeforeTruncation() {
+        let tenSpaces = String(repeating: " ", count: 10)
+        let payload = "abcdefghijklmnop"
+        let content = "\(tenSpaces)\(payload)"
+        let analysis = ClipboardAnalyzer.analyze(content, menuLabelMaxChars: 12)
+        XCTAssertEqual(analysis.previewLines.count, 1)
+        XCTAssertTrue(analysis.previewLines[0].hasPrefix("abcdefghijkl"))
+        XCTAssertTrue(analysis.previewLines[0].hasSuffix("…"))
     }
 
     func testAnalyzer_displayPreview_zeroLinesOmitsValueOnlyRows() {

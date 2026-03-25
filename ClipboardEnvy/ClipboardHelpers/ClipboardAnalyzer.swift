@@ -244,15 +244,38 @@ enum ClipboardAnalyzer {
     }
 
     /// First up to `maxLines` non-empty lines (by trimming whitespace/newlines), each truncated like snippet menu titles.
+    /// When every preview line begins with the same kind of indent (all spaces or all tabs matching the first line’s first character),
+    /// removes that common prefix from each line before truncation so the menu shows more content and less gutter.
     private static func buildPreviewLines(from text: String, maxLineLength: Int, maxLines: Int) -> [String] {
         guard maxLines > 0 else { return [] }
-        var lines: [String] = []
+        var rawLines: [String] = []
         for line in text.components(separatedBy: .newlines) {
             if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
-            lines.append(truncateForMenuLabel(line, limit: maxLineLength))
-            if lines.count >= maxLines { break }
+            rawLines.append(line)
+            if rawLines.count >= maxLines { break }
         }
-        return lines
+        let dedented = dedentHomogeneousLeadingIndent(rawLines)
+        return dedented.map { truncateForMenuLabel($0, limit: maxLineLength) }
+    }
+
+    /// Strips the same count of leading `matchChar` (space or tab) from every line, where `matchChar` is taken from the first
+    /// character of the first line and `indentSize` is the minimum leading run of that character across lines.
+    private static func dedentHomogeneousLeadingIndent(_ lines: [String]) -> [String] {
+        guard let first = lines.first, let matchChar = first.first, matchChar == " " || matchChar == "\t" else {
+            return lines
+        }
+        let counts = lines.map { countLeadingCharacters($0, matching: matchChar) }
+        let indentSize = counts.min() ?? 0
+        guard indentSize > 0 else { return lines }
+        return lines.map { String($0.dropFirst(indentSize)) }
+    }
+
+    private static func countLeadingCharacters(_ s: String, matching matchChar: Character) -> Int {
+        var n = 0
+        for ch in s {
+            if ch == matchChar { n += 1 } else { break }
+        }
+        return n
     }
 
     private static func truncateForMenuLabel(_ text: String, limit: Int) -> String {
@@ -655,45 +678,18 @@ enum ClipboardAnalyzer {
     }
 
     private static func detectYAML(_ trimmed: String, original: String) -> ClipboardAnalysis? {
-        // Reject if text looks like prose
-        if looksLikeProse(trimmed) { return nil }
-
-        let lines = trimmed.components(separatedBy: .newlines)
-
-        // Count YAML-like lines vs total non-empty lines
-        var yamlLikeLines = 0
-        var nonEmptyLines = 0
-        for line in lines {
-            let t = line.trimmingCharacters(in: .whitespaces)
-            if t.isEmpty { continue }
-            nonEmptyLines += 1
-
-            // YAML array item: starts with "- " and the rest is short (not a sentence)
-            if t.hasPrefix("- ") {
-                let rest = String(t.dropFirst(2))
-                if rest.count < 80 && !rest.contains(". ") {
-                    yamlLikeLines += 1
-                    continue
-                }
-            }
-
-            // YAML key-value: contains ": " where key is a simple identifier
-            if let colonRange = t.range(of: ": ") {
-                let key = String(t[..<colonRange.lowerBound])
-                // Key should be simple: no spaces (unless quoted), not starting with http
-                let isSimpleKey = !key.contains(" ") || (key.hasPrefix("\"") && key.hasSuffix("\"")) || (key.hasPrefix("'") && key.hasSuffix("'"))
-                if isSimpleKey && !key.hasPrefix("http") {
-                    yamlLikeLines += 1
-                    continue
-                }
-            }
-        }
-
-        // Require significant YAML structure (at least 50% of lines look like YAML)
-        guard nonEmptyLines >= 2 && yamlLikeLines * 2 >= nonEmptyLines else { return nil }
+        // Intentionally no looksLikeProse here: self-documented YAML often has many full-sentence
+        // `#` comments that match the prose heuristic. Structured YAML detection relies on
+        // YAMLHelpers.parsesAsStructuredYAMLDocument instead.
 
         let hasJsonStart = trimmed.hasPrefix("{") || trimmed.hasPrefix("[")
         guard !hasJsonStart else { return nil }
+
+        // Require a successful parse under the same block parser as transforms, with strict line/key rules
+        // so Swift and other code with `name: value` fragments is not labeled YAML.
+        guard YAMLHelpers.parsesAsStructuredYAMLDocument(trimmed) else { return nil }
+
+        let lines = trimmed.components(separatedBy: .newlines)
 
         var analysis = ClipboardAnalysis(dataType: .yaml)
         addTextMetrics(to: &analysis, text: original)
@@ -702,7 +698,12 @@ enum ClipboardAnalyzer {
         let lineCount = trimmed.components(separatedBy: .newlines).count
         analysis.set("Minified", lineCount == 1 ? "Yes" : "No")
 
-        let isArrayStyle = lines.first { !$0.trimmingCharacters(in: .whitespaces).isEmpty }?.trimmingCharacters(in: .whitespaces).hasPrefix("-") ?? false
+        let firstStructuralLine = lines.lazy
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .first { t in
+                !t.isEmpty && !t.hasPrefix("#") && !YAMLHelpers.isYAMLStreamMarkerLine(t)
+            }
+        let isArrayStyle = firstStructuralLine.map { $0 == "-" || $0.hasPrefix("- ") } ?? false
         analysis.set("Structure", isArrayStyle ? "Array" : "Object")
 
         return analysis
