@@ -1387,8 +1387,8 @@ struct MenuBarView: View {
                     Button(symbolMenuLabel(symbol: "¢", name: "Cent")) { setClipboardTo("¢") }
                 }
                 Menu("Table") {
-                    Button(symbolMenuLabel(symbol: "─", name: "Top/Bottom Border")) { setClipboardTo("─") }
-                    Button(symbolMenuLabel(symbol: "│", name: "Left/Right Border")) { setClipboardTo("│") }
+                    Button(symbolMenuLabel(symbol: "–", name: "Top/Bottom Border")) { setClipboardTo("─") }
+                    Button(symbolMenuLabel(symbol: " │ ", name: "Left/Right Border")) { setClipboardTo("│") }
                     Button(symbolMenuLabel(symbol: "┌", name: "Upper Left Border")) { setClipboardTo("┌") }
                     Button(symbolMenuLabel(symbol: "┬", name: "Upper Column Separator")) { setClipboardTo("┬") }
                     Button(symbolMenuLabel(symbol: "┐", name: "Upper Right Border")) { setClipboardTo("┐") }
