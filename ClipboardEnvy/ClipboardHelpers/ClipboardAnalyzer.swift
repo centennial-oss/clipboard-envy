@@ -17,12 +17,15 @@ enum ClipboardDataType: String, CaseIterable {
     case databaseCLITable = "Database CLI Table"
     case binaryValue = "Binary Value"
     case hexadecimal = "Hexadecimal Value"
+    case integer = "Integer"
+    case decimal = "Decimal"
     case generalText = "General Text"
 }
 
 /// Result of clipboard analysis with type-safe access to detected properties.
 /// Uses ordered array to preserve insertion order for display.
-struct ClipboardAnalysis {
+/// Explicitly not ``MainActor`` so analysis can run off the UI actor despite the module default.
+nonisolated struct ClipboardAnalysis {
     /// Marker key for legacy `displayItems` composition (divider before counts).
     static let dividerKey = "---"
     /// Empty key in `displayItems` means show `value` only (e.g. multiline preview rows).
@@ -32,6 +35,8 @@ struct ClipboardAnalysis {
     private var orderedProperties: [(key: String, value: String)] = []
     private var textMetrics: [(key: String, value: String)] = []
     private var previewOnlyLines: [String] = []
+    /// True when the clipboard (or decoded preview source) has more non-empty lines than ``previewLines``.
+    private(set) var previewHasAdditionalLines: Bool = false
 
     init(dataType: ClipboardDataType) {
         self.dataType = dataType
@@ -67,6 +72,10 @@ struct ClipboardAnalysis {
 
     mutating func appendPreviewOnlyLines(_ lines: [String]) {
         previewOnlyLines.append(contentsOf: lines)
+    }
+
+    mutating func setPreviewHasAdditionalLines(_ value: Bool) {
+        previewHasAdditionalLines = previewHasAdditionalLines || value
     }
 
     mutating func setTextMetric(_ key: String, _ value: String) {
@@ -114,7 +123,7 @@ struct ClipboardAnalysis {
         return count
     }
 
-    /// Convenience accessor for database CLI format (e.g., "MySQL CLI", "psql", "sqlite3").
+    /// Convenience accessor for database CLI format (e.g., "MySQL CLI", "psql", "sqlite3", "ClickHouse CLI").
     var databaseFormat: String? {
         self["Format"]
     }
@@ -218,6 +227,8 @@ enum ClipboardAnalyzer {
         if let analysis = detectTime(trimmed, original: text) { return finish(analysis, sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) }
         if let analysis = detectBase64URL(trimmed, original: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) { return finish(analysis, sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) }
         if let analysis = detectBase64(trimmed, original: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) { return finish(analysis, sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) }
+        // Before hex so digit-only values like `2048` are Integer, not hex nibbles.
+        if let analysis = detectPlainNumber(trimmed, original: text) { return finish(analysis, sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) }
         if let analysis = detectHexadecimal(trimmed, original: text) { return finish(analysis, sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) }
         if let analysis = detectJSON(trimmed, original: text) { return finish(analysis, sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) }
         if let analysis = detectDatabaseCLITable(trimmed, original: text) { return finish(analysis, sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) }
@@ -233,8 +244,9 @@ enum ClipboardAnalyzer {
     private static func finish(_ analysis: ClipboardAnalysis, sourceText: String, maxLineLen: Int, previewMaxLines: Int) -> ClipboardAnalysis {
         var a = analysis
         if previewMaxLines > 0, shouldAppendPlaintextStylePreview(for: a.dataType) {
-            let lines = buildPreviewLines(from: sourceText, maxLineLength: maxLineLen, maxLines: previewMaxLines)
+            let (lines, hasMore) = buildPreviewLines(from: sourceText, maxLineLength: maxLineLen, maxLines: previewMaxLines)
             a.appendPreviewOnlyLines(lines)
+            a.setPreviewHasAdditionalLines(hasMore)
         }
         return a
     }
@@ -251,16 +263,23 @@ enum ClipboardAnalyzer {
     /// First up to `maxLines` non-empty lines (by trimming whitespace/newlines), each truncated like snippet menu titles.
     /// When every preview line begins with the same kind of indent (all spaces or all tabs matching the first line’s first character),
     /// removes that common prefix from each line before truncation so the menu shows more content and less gutter.
-    private static func buildPreviewLines(from text: String, maxLineLength: Int, maxLines: Int) -> [String] {
-        guard maxLines > 0 else { return [] }
+    /// - Returns: Lines to show, and whether another non-empty line exists after those.
+    private static func buildPreviewLines(from text: String, maxLineLength: Int, maxLines: Int) -> (lines: [String], hasAdditionalNonEmptyLines: Bool) {
+        guard maxLines > 0 else { return ([], false) }
         var rawLines: [String] = []
+        var hasAdditionalNonEmptyLines = false
         for line in text.components(separatedBy: .newlines) {
             if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
-            rawLines.append(line)
-            if rawLines.count >= maxLines { break }
+            if rawLines.count < maxLines {
+                rawLines.append(line)
+            } else {
+                hasAdditionalNonEmptyLines = true
+                break
+            }
         }
         let dedented = dedentHomogeneousLeadingIndent(rawLines)
-        return dedented.map { truncateForMenuLabel($0, limit: maxLineLength) }
+        let lines = dedented.map { truncateForMenuLabel($0, limit: maxLineLength) }
+        return (lines, hasAdditionalNonEmptyLines)
     }
 
     /// Strips the same count of leading `matchChar` (space or tab) from every line, where `matchChar` is taken from the first
@@ -342,13 +361,15 @@ enum ClipboardAnalyzer {
            let payloadData = base64URLDecodeToData(payloadPart),
            let payloadJSON = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any] {
             var lines: [String] = []
-            for (key, value) in payloadJSON.sorted(by: { $0.key < $1.key }) {
+            let sortedClaims = payloadJSON.sorted(by: { $0.key < $1.key })
+            for (key, value) in sortedClaims {
                 guard lines.count < previewMaxLines else { break }
                 let valueStr = jwtPayloadClaimDisplayString(key: key, value: value)
                 let line = "\(key): \(valueStr)"
                 lines.append(truncateForMenuLabel(line, limit: maxLineLen))
             }
             analysis.appendPreviewOnlyLines(lines)
+            analysis.setPreviewHasAdditionalLines(sortedClaims.count > lines.count)
         }
 
         return analysis
@@ -406,10 +427,18 @@ enum ClipboardAnalyzer {
         guard trimmed.utf8.count < binaryValueMaxUTF8Bytes else { return nil }
         if trimmed.contains("\n") || trimmed.contains("\r") { return nil }
 
-        let hasSpace = trimmed.contains(" ")
-        let hasTab = trimmed.contains("\t")
+        var had0bPrefix = false
+        var bitPayload = trimmed
+        if bitPayload.lowercased().hasPrefix("0b") {
+            had0bPrefix = true
+            bitPayload = String(bitPayload.dropFirst(2))
+            guard !bitPayload.isEmpty else { return nil }
+        }
+
+        let hasSpace = bitPayload.contains(" ")
+        let hasTab = bitPayload.contains("\t")
         if hasSpace && hasTab { return nil }
-        guard trimmed.unicodeScalars.allSatisfy({ s in
+        guard bitPayload.unicodeScalars.allSatisfy({ s in
             s == "0" || s == "1" || s == " " || s == "\t"
         }) else { return nil }
 
@@ -418,7 +447,7 @@ enum ClipboardAnalyzer {
 
         if hasSpace || hasTab {
             let separator: Character = hasSpace ? " " : "\t"
-            let parts = trimmed.split(whereSeparator: { $0 == separator }).map(String.init)
+            let parts = bitPayload.split(whereSeparator: { $0 == separator }).map(String.init)
             guard parts.count >= 2 else { return nil }
             guard let first = parts.first,
                   (1...8).contains(first.count),
@@ -435,10 +464,12 @@ enum ClipboardAnalyzer {
         }
 
         // Contiguous 0/1 only
-        guard trimmed.unicodeScalars.allSatisfy({ $0 == "0" || $0 == "1" }) else { return nil }
-        let bitCount = trimmed.count
+        guard bitPayload.unicodeScalars.allSatisfy({ $0 == "0" || $0 == "1" }) else { return nil }
+        let bitCount = bitPayload.count
+        // Unprefixed single-bit strings are decimal digits, not bit patterns (e.g. "0" → Integer).
+        if bitCount == 1, !had0bPrefix { return nil }
         if bitCount >= 16, bitCount.isMultiple(of: 8) {
-            guard let bytes = binaryContiguousToBytes(trimmed) else { return nil }
+            guard let bytes = binaryContiguousToBytes(bitPayload) else { return nil }
             analysis.set("Hex Data", formatBinaryBytesAsHexSpaced(bytes))
             if bytes.allSatisfy({ (32...126).contains($0) }) {
                 analysis.set("ASCII Data", String(decoding: bytes, as: UTF8.self))
@@ -446,7 +477,7 @@ enum ClipboardAnalyzer {
             return analysis
         }
 
-        if bitCount <= 64, let intVal = binaryStringToUInt64(trimmed) {
+        if bitCount <= 64, let intVal = binaryStringToUInt64(bitPayload) {
             analysis.set("Integer Value", "\(intVal)")
         }
         return analysis
@@ -504,8 +535,14 @@ enum ClipboardAnalyzer {
     /// Hexadecimal digit run (0-9, a-f after trim+lowercase), at least 4 characters, detected after Base64 so decodable payloads win.
     /// Even lengths report byte count (half the length) and bit count (bytes × 8).
     private static func detectHexadecimal(_ trimmed: String, original: String) -> ClipboardAnalysis? {
-        let normalized = trimmed.lowercased()
-        guard normalized.count >= 4, isHexadecimalDigitString(normalized) else { return nil }
+        var normalized = trimmed.lowercased()
+        let had0xPrefix = normalized.hasPrefix("0x")
+        if had0xPrefix {
+            normalized = String(normalized.dropFirst(2))
+            guard !normalized.isEmpty else { return nil }
+        }
+        let minLen = had0xPrefix ? 1 : 4
+        guard normalized.count >= minLen, isHexadecimalDigitString(normalized) else { return nil }
 
         var analysis = ClipboardAnalysis(dataType: .hexadecimal)
         addTextMetrics(to: &analysis, text: original)
@@ -544,8 +581,9 @@ enum ClipboardAnalyzer {
         addTextMetrics(to: &analysis, text: decodedString)
         analysis.set("Encoded Size", "\(original.utf8.count) bytes")
         analysis.set("Decoded Size", "\(decoded.count) bytes")
-        let lines = buildPreviewLines(from: decodedString, maxLineLength: maxLineLen, maxLines: previewMaxLines)
+        let (lines, hasMore) = buildPreviewLines(from: decodedString, maxLineLength: maxLineLen, maxLines: previewMaxLines)
         analysis.appendPreviewOnlyLines(lines)
+        analysis.setPreviewHasAdditionalLines(hasMore)
 
         return analysis
     }
@@ -564,8 +602,9 @@ enum ClipboardAnalyzer {
         addTextMetrics(to: &analysis, text: decodedString)
         analysis.set("Encoded Size", "\(original.utf8.count) bytes")
         analysis.set("Decoded Size", "\(decoded.count) bytes")
-        let lines = buildPreviewLines(from: decodedString, maxLineLength: maxLineLen, maxLines: previewMaxLines)
+        let (lines, hasMore) = buildPreviewLines(from: decodedString, maxLineLength: maxLineLen, maxLines: previewMaxLines)
         analysis.appendPreviewOnlyLines(lines)
+        analysis.setPreviewHasAdditionalLines(hasMore)
 
         return analysis
     }
@@ -609,6 +648,7 @@ enum ClipboardAnalyzer {
         guard lines.count >= 2 else { return nil }
 
         if let analysis = detectMySQLTable(lines, original: original) { return analysis }
+        if let analysis = detectClickHouseTable(trimmed, original: original) { return analysis }
         if let analysis = detectPsqlTable(lines, original: original) { return analysis }
         if let analysis = detectSqlite3Table(lines, original: original) { return analysis }
 
@@ -686,6 +726,17 @@ enum ClipboardAnalyzer {
             analysis.set("Columns", "\(columns.count)")
         }
 
+        return analysis
+    }
+
+    private static func detectClickHouseTable(_ trimmed: String, original: String) -> ClipboardAnalysis? {
+        guard let rows = try? ClipboardTransform.clickhouseCliTableRows(trimmed), rows.count >= 2 else { return nil }
+
+        var analysis = ClipboardAnalysis(dataType: .databaseCLITable)
+        addTextMetrics(to: &analysis, text: original)
+        analysis.set("Format", "ClickHouse CLI")
+        analysis.set("Columns", "\(rows[0].count)")
+        analysis.set("Data Rows", "\(rows.count - 1)")
         return analysis
     }
 
@@ -841,6 +892,48 @@ enum ClipboardAnalyzer {
         analysis.set("Structure", isArrayStyle ? "Array" : "Object")
 
         return analysis
+    }
+
+    private static func detectPlainNumber(_ trimmed: String, original: String) -> ClipboardAnalysis? {
+        guard trimmed.rangeOfCharacter(from: .newlines) == nil else { return nil }
+        // Binary rejects at `binaryValueMaxUTF8Bytes`; long 0/1-only runs are better as hex (or remain non-integer).
+        if trimmed.utf8.count >= binaryValueMaxUTF8Bytes,
+           trimmed.unicodeScalars.allSatisfy({ $0 == "0" || $0 == "1" }) {
+            return nil
+        }
+        let lonePrefix = trimmed.lowercased()
+        guard lonePrefix != "0x", lonePrefix != "0b" else { return nil }
+        guard trimmed.unicodeScalars.allSatisfy({ ("0"..."9").contains($0) || $0 == "-" || $0 == "." }) else { return nil }
+        guard trimmed.filter({ $0 == "-" }).count <= 1, !trimmed.dropFirst().contains("-") else { return nil }
+
+        let locale = Locale(identifier: "en_US_POSIX")
+        if matchesPlainInteger(trimmed) {
+            guard let dec = Decimal(string: trimmed, locale: locale) else { return nil }
+            var analysis = ClipboardAnalysis(dataType: .integer)
+            addTextMetrics(to: &analysis, text: original)
+            ClipboardNumberAnalysis.apply(to: &analysis, value: dec, rawInput: trimmed, flavor: .integer)
+            return analysis
+        }
+        if matchesPlainDecimal(trimmed) {
+            guard let dec = Decimal(string: trimmed, locale: locale) else { return nil }
+            var analysis = ClipboardAnalysis(dataType: .decimal)
+            addTextMetrics(to: &analysis, text: original)
+            ClipboardNumberAnalysis.apply(to: &analysis, value: dec, rawInput: trimmed, flavor: .decimal)
+            return analysis
+        }
+        return nil
+    }
+
+    private static func matchesPlainInteger(_ s: String) -> Bool {
+        guard let re = try? NSRegularExpression(pattern: "^-?[0-9]+$") else { return false }
+        let range = NSRange(s.startIndex..., in: s)
+        return re.firstMatch(in: s, options: [], range: range)?.range == range
+    }
+
+    private static func matchesPlainDecimal(_ s: String) -> Bool {
+        guard let re = try? NSRegularExpression(pattern: "^-?[0-9]+\\.[0-9]+$") else { return false }
+        let range = NSRange(s.startIndex..., in: s)
+        return re.firstMatch(in: s, options: [], range: range)?.range == range
     }
 
     private static func analyzeGeneralText(_ text: String) -> ClipboardAnalysis {
@@ -1105,5 +1198,273 @@ enum ClipboardAnalyzer {
         }
 
         return true
+    }
+}
+
+// MARK: - Numeric clipboard analysis (file scope avoids Swift 6 main-actor isolation on nested types)
+
+/// Extensible analysis for ``ClipboardDataType/integer`` and ``ClipboardDataType/decimal``; append steps to the flavor pipelines.
+nonisolated fileprivate enum ClipboardNumberAnalysis {
+    /// Grouping separator for thousands in ``Prettified`` (future: localization hook).
+    static let thousandsSeparator = ","
+
+    /// Maximum absolute value shown in numeric analysis rows (omit row when exceeded).
+    private static let maxAnalysisMagnitude = Decimal(Int64.max)
+
+    /// Maximum fractional digits after the decimal for ``Flavor/decimal`` display.
+    private static let decimalMaxFractionDigits = 15
+
+    enum Flavor {
+        case integer
+        case decimal
+    }
+
+    typealias Step = (inout ClipboardAnalysis, Decimal, String, Flavor) -> Void
+
+    private static let sharedSteps: [Step] = [
+        appendSquared,
+        appendCubed,
+        appendSquareRoot,
+        appendCubeRoot,
+        appendReciprocal,
+    ]
+
+    private static let integerPipeline: [Step] = [
+        appendPrettifiedIfNeeded,
+        appendHexForInteger,
+        appendBinaryForInteger,
+    ] + sharedSteps
+
+    private static let decimalPipeline: [Step] = [
+        appendPrettifiedIfNeeded,
+        appendFractionalForDecimal,
+    ] + sharedSteps
+
+    static func apply(to analysis: inout ClipboardAnalysis, value: Decimal, rawInput: String, flavor: Flavor) {
+        let pipe = flavor == .integer ? integerPipeline : decimalPipeline
+        for step in pipe {
+            step(&analysis, value, rawInput, flavor)
+        }
+    }
+
+    private static let thousandThreshold: Decimal = 1_000
+
+    private static func appendPrettifiedIfNeeded(_ analysis: inout ClipboardAnalysis, value: Decimal, raw: String, flavor: Flavor) {
+        guard decimalAbs(value) > thousandThreshold else { return }
+        guard !magnitudeExceedsMaxInt64(value) else { return }
+        let display = flavor == .decimal ? applyDecimalFractionalRules(raw) : raw
+        analysis.set("Prettified", insertThousandsSeparator(raw: display, sep: thousandsSeparator))
+    }
+
+    private static func appendHexForInteger(_ analysis: inout ClipboardAnalysis, value: Decimal, raw: String, flavor: Flavor) {
+        guard flavor == .integer, let i64 = Int64(raw) else { return }
+        let hex: String
+        if i64 >= 0 {
+            hex = String(i64, radix: 16, uppercase: true)
+        } else {
+            hex = String(UInt64(bitPattern: i64), radix: 16, uppercase: true)
+        }
+        analysis.set("Hex", "0x\(hex)")
+    }
+
+    private static func appendBinaryForInteger(_ analysis: inout ClipboardAnalysis, value: Decimal, raw: String, flavor: Flavor) {
+        guard flavor == .integer, let i64 = Int64(raw) else { return }
+        let bin: String
+        if i64 >= 0 {
+            bin = String(i64, radix: 2)
+        } else {
+            bin = String(UInt64(bitPattern: i64), radix: 2)
+        }
+        analysis.set("Binary", bin)
+    }
+
+    private static func appendSquared(_ analysis: inout ClipboardAnalysis, value: Decimal, raw: String, flavor: Flavor) {
+        _ = raw
+        let r = value * value
+        guard let s = formatNumericAnalysisValue(r, flavor: flavor, prettifyForGrouping: true) else { return }
+        analysis.set("Squared", s)
+    }
+
+    private static func appendCubed(_ analysis: inout ClipboardAnalysis, value: Decimal, raw: String, flavor: Flavor) {
+        _ = raw
+        let r = value * value * value
+        guard let s = formatNumericAnalysisValue(r, flavor: flavor, prettifyForGrouping: true) else { return }
+        analysis.set("Cubed", s)
+    }
+
+    private static func appendSquareRoot(_ analysis: inout ClipboardAnalysis, value: Decimal, raw: String, flavor: Flavor) {
+        _ = value
+        guard let d = Double(raw), d >= 0, d.isFinite else { return }
+        guard let s = formatDoubleForAnalysis(sqrt(d), flavor: flavor, prettifyForGrouping: true) else { return }
+        analysis.set("Square Root", s)
+    }
+
+    private static func appendCubeRoot(_ analysis: inout ClipboardAnalysis, value: Decimal, raw: String, flavor: Flavor) {
+        _ = value
+        guard let d = Double(raw), d.isFinite else { return }
+        let r = d >= 0 ? pow(d, 1.0 / 3.0) : -pow(-d, 1.0 / 3.0)
+        guard let s = formatDoubleForAnalysis(r, flavor: flavor, prettifyForGrouping: true) else { return }
+        analysis.set("Cube Root", s)
+    }
+
+    private static func appendReciprocal(_ analysis: inout ClipboardAnalysis, value: Decimal, raw: String, flavor: Flavor) {
+        _ = (raw, flavor)
+        guard value != 0 else { return }
+        let one: Decimal = 1
+        let inv = one / value
+        // Reciprocal is almost always non-integer; use decimal fractional rules regardless of clipboard ``Flavor``.
+        guard let s = formatNumericAnalysisValue(inv, flavor: .decimal, prettifyForGrouping: false) else { return }
+        analysis.set("Reciprocal", s)
+    }
+
+    private static func appendFractionalForDecimal(_ analysis: inout ClipboardAnalysis, value: Decimal, raw: String, flavor: Flavor) {
+        guard flavor == .decimal, let d = Double(raw), d.isFinite else { return }
+        guard !magnitudeExceedsMaxInt64(d) else { return }
+        let mag = abs(d)
+        let ip = floor(mag)
+        let frac = mag - ip
+        let tolerance = 1e-6
+        guard frac > tolerance, frac < 1 - tolerance else { return }
+        guard let (num, den) = approximateSimpleFraction(frac, maxDenominator: 16, tolerance: tolerance) else { return }
+        guard let intStr = formatDoubleForAnalysis(ip, flavor: .decimal, prettifyForGrouping: false) else { return }
+        let body = "\(intStr) + \(num)/\(den)"
+        analysis.set("Fractional", d < 0 ? "-(\(body))" : body)
+    }
+
+    // MARK: - Magnitude / formatting
+
+    private static func magnitudeExceedsMaxInt64(_ x: Decimal) -> Bool {
+        decimalAbs(x) > maxAnalysisMagnitude
+    }
+
+    private static func magnitudeExceedsMaxInt64(_ x: Double) -> Bool {
+        guard x.isFinite else { return true }
+        return decimalAbs(Decimal(x)) > maxAnalysisMagnitude
+    }
+
+    /// Formats a ``Decimal`` result for analysis; returns `nil` when ``magnitudeExceedsMaxInt64``.
+    private static func formatNumericAnalysisValue(_ x: Decimal, flavor: Flavor, prettifyForGrouping: Bool) -> String? {
+        guard !magnitudeExceedsMaxInt64(x) else { return nil }
+        var plain = formatDecimalPlain(x)
+        if plain.contains("e") || plain.contains("E") {
+            if let normalized = normalizeScientificDecimalString(plain) {
+                plain = normalized
+            }
+        }
+        if flavor == .decimal {
+            plain = applyDecimalFractionalRules(plain)
+        }
+        if prettifyForGrouping && decimalAbs(x) >= thousandThreshold {
+            return insertThousandsSeparator(raw: plain, sep: thousandsSeparator)
+        }
+        return plain
+    }
+
+    private static func formatDoubleForAnalysis(_ x: Double, flavor: Flavor, prettifyForGrouping: Bool) -> String? {
+        guard x.isFinite else { return nil }
+        guard !magnitudeExceedsMaxInt64(x) else { return nil }
+        let trimmed = formatDoubleTrimmed(x)
+        guard let dec = Decimal(string: trimmed) else {
+            return formatNumericAnalysisValue(Decimal(x), flavor: flavor, prettifyForGrouping: prettifyForGrouping)
+        }
+        return formatNumericAnalysisValue(dec, flavor: flavor, prettifyForGrouping: prettifyForGrouping)
+    }
+
+    /// Decimal clipboard values: cap fractional length at ``decimalMaxFractionDigits``, and keep from the start of the fraction through (first non-zero + next 4 digits), e.g. `2388.000000000200123…` → `2388.00000000020012`.
+    private static func applyDecimalFractionalRules(_ raw: String) -> String {
+        let t = raw.trimmingCharacters(in: .whitespaces)
+        guard let dot = t.firstIndex(of: ".") else { return t }
+        let negative = t.hasPrefix("-")
+        let unsigned = negative ? String(t.dropFirst()) : t
+        guard let udot = unsigned.firstIndex(of: ".") else { return t }
+        let intPart = String(unsigned[..<udot])
+        var frac = String(unsigned[unsigned.index(after: udot)...])
+        frac = String(frac.prefix { $0.isNumber })
+        guard let firstNonZero = frac.firstIndex(where: { $0 != "0" }) else {
+            return (negative ? "-" : "") + intPart
+        }
+        let lead = frac.distance(from: frac.startIndex, to: firstNonZero)
+        let fracEndLen = min(lead + 5, decimalMaxFractionDigits, frac.count)
+        let clipped = String(frac.prefix(fracEndLen))
+        return (negative ? "-" : "") + intPart + "." + clipped
+    }
+
+    private static func normalizeScientificDecimalString(_ s: String) -> String? {
+        guard let d = Double(s), d.isFinite else { return nil }
+        guard !magnitudeExceedsMaxInt64(d) else { return nil }
+        return formatDecimalPlain(Decimal(d))
+    }
+
+    private static func approximateSimpleFraction(_ f: Double, maxDenominator: Int, tolerance: Double) -> (Int, Int)? {
+        var best: (Int, Int)?
+        var bestErr = Double.greatestFiniteMagnitude
+        for den in 1...maxDenominator {
+            let num = Int((f * Double(den)).rounded())
+            guard num >= 1, num < den else { continue }
+            let err = abs(f - Double(num) / Double(den))
+            if err < bestErr {
+                bestErr = err
+                best = (num, den)
+            }
+        }
+        guard let b = best, bestErr <= tolerance else { return nil }
+        let g = greatestCommonDivisor(b.0, b.1)
+        return (b.0 / g, b.1 / g)
+    }
+
+    private static func greatestCommonDivisor(_ a: Int, _ b: Int) -> Int {
+        var a = abs(a)
+        var b = abs(b)
+        while b != 0 {
+            let t = a % b
+            a = b
+            b = t
+        }
+        return max(a, 1)
+    }
+
+    private static func decimalAbs(_ x: Decimal) -> Decimal {
+        x < 0 ? -x : x
+    }
+
+    private static func insertThousandsSeparator(raw: String, sep: String) -> String {
+        if raw.contains(".") {
+            let parts = raw.split(separator: ".", maxSplits: 1, omittingEmptySubsequences: false)
+            let intPart = String(parts[0])
+            let frac = parts.count > 1 ? String(parts[1]) : ""
+            let neg = intPart.hasPrefix("-")
+            let digits = neg ? String(intPart.dropFirst()) : intPart
+            guard digits.allSatisfy(\.isNumber) else { return raw }
+            let core = groupDigits(digits, sep: sep)
+            let signed = neg ? "-" + core : core
+            return frac.isEmpty ? signed : "\(signed).\(frac)"
+        }
+        let neg = raw.hasPrefix("-")
+        let digits = neg ? String(raw.dropFirst()) : raw
+        guard digits.allSatisfy(\.isNumber) else { return raw }
+        let core = groupDigits(digits, sep: sep)
+        return neg ? "-" + core : core
+    }
+
+    private static func groupDigits(_ integralDigits: String, sep: String) -> String {
+        let chars = Array(integralDigits)
+        var parts: [String] = []
+        var i = chars.count
+        while i > 0 {
+            let start = max(0, i - 3)
+            parts.append(String(chars[start..<i]))
+            i = start
+        }
+        return parts.reversed().joined(separator: sep)
+    }
+
+    private static func formatDecimalPlain(_ x: Decimal) -> String {
+        var d = x
+        return NSDecimalString(&d, Locale(identifier: "en_US_POSIX") as NSLocale?)
+    }
+
+    private static func formatDoubleTrimmed(_ x: Double) -> String {
+        guard x.isFinite else { return "\(x)" }
+        return String(format: "%.15g", x)
     }
 }

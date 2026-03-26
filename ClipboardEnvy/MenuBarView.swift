@@ -391,6 +391,7 @@ struct MenuBarView: View {
             showColumnsSection: showColumnsSection,
             showsMySQLSectionWithoutOption: clipboardAnalysis.databaseFormat == "MySQL CLI",
             showsPsqlSectionWithoutOption: clipboardAnalysis.databaseFormat == "psql",
+            showsClickHouseSectionWithoutOption: clipboardAnalysis.databaseFormat == "ClickHouse CLI",
             showsSQLite3SectionWithoutOption: clipboardAnalysis.databaseFormat == "sqlite3",
             hasDatabaseCLITableContext: clipboardAnalysis.dataType == .databaseCLITable
         )
@@ -508,6 +509,9 @@ struct MenuBarView: View {
                 Section("Preview") {
                     ForEach(Array(clipboardAnalysis.previewLines.enumerated()), id: \.offset) { _, line in
                         Text(line)
+                    }
+                    if clipboardAnalysis.previewHasAdditionalLines {
+                        Text("…")
                     }
                 }
             }
@@ -1137,6 +1141,10 @@ struct MenuBarView: View {
                     Button("Table → CSV") { transformClipboardIfValid(ClipboardTransform.psqlCliTableToCsv) }
                     Button("Table → JSON") { transformClipboardIfValid(ClipboardTransform.psqlCliTableToJson) }
                 }
+                Section(TransformMenuTitles.Section.clickhouse.rawValue) {
+                    Button("Table → CSV") { transformClipboardIfValid(ClipboardTransform.clickhouseCliTableToCsv) }
+                    Button("Table → JSON") { transformClipboardIfValid(ClipboardTransform.clickhouseCliTableToJson) }
+                }
                 Section(TransformMenuTitles.Section.sqlite3.rawValue) {
                     Button("Table → CSV") { transformClipboardIfValid(ClipboardTransform.sqlite3TableToCsv) }
                     Button("Table → JSON") { transformClipboardIfValid(ClipboardTransform.sqlite3TableToJson) }
@@ -1378,6 +1386,16 @@ struct MenuBarView: View {
                     Button(symbolMenuLabel(symbol: "$", name: "Dollar")) { setClipboardTo("$") }
                     Button(symbolMenuLabel(symbol: "¢", name: "Cent")) { setClipboardTo("¢") }
                 }
+                Menu("Table") {
+                    Button(symbolMenuLabel(symbol: "─", name: "Top/Bottom Border")) { setClipboardTo("─") }
+                    Button(symbolMenuLabel(symbol: "│", name: "Left/Right Border")) { setClipboardTo("│") }
+                    Button(symbolMenuLabel(symbol: "┌", name: "Upper Left Border")) { setClipboardTo("┌") }
+                    Button(symbolMenuLabel(symbol: "┬", name: "Upper Column Separator")) { setClipboardTo("┬") }
+                    Button(symbolMenuLabel(symbol: "┐", name: "Upper Right Border")) { setClipboardTo("┐") }
+                    Button(symbolMenuLabel(symbol: "└", name: "Lower Left Border")) { setClipboardTo("└") }
+                    Button(symbolMenuLabel(symbol: "┴", name: "Lower Column Separator")) { setClipboardTo("┴") }
+                    Button(symbolMenuLabel(symbol: "┘", name: "Lower Right Border")) { setClipboardTo("┘") }
+                }
             }
             Divider()
             Menu("Test Data") {
@@ -1397,6 +1415,7 @@ struct MenuBarView: View {
                 Divider()
                 Button("MySQL CLI Table") { setClipboardTo(TestData.mysqlCLI) }
                 Button("psql CLI Table") { setClipboardTo(TestData.psqlCLI) }
+                Button("ClickHouse CLI Table") { setClipboardTo(TestData.clickhouseCLI) }
                 Button("sqlite3 CLI Table") { setClipboardTo(TestData.sqlite3CLI) }
                 Divider()
                 Button("Fixed-Width (Docker ps)") { setClipboardTo(TestData.fixedWidthDockerContainers) }

@@ -36,6 +36,17 @@ extension ClipboardTransform {
         return try csvToJson(csv)
     }
 
+    nonisolated static func clickhouseCliTableToCsv(_ s: String) throws -> String {
+        let rows = try clickhouseCliTableRows(s)
+        return csvString(from: rows, nullsAsEmpty: true)
+    }
+
+    nonisolated static func clickhouseCliTableToJson(_ s: String) throws -> String {
+        let rows = try clickhouseCliTableRows(s)
+        let csv = csvString(from: rows, nullsAsEmpty: true)
+        return try csvToJson(csv)
+    }
+
     private nonisolated static func mysqlCliTableRows(_ s: String) throws -> [[String]] {
         let lines = windowsNewlinesToUnix(s).components(separatedBy: .newlines)
         let borderIndices = lines.indices.filter { isMySQLCliTableBorder(lines[$0]) }
@@ -124,6 +135,143 @@ extension ClipboardTransform {
         }
 
         return [headers] + dataLines.map { parseSQLite3FixedWidthRow($0, columnStarts: columnStarts) }
+    }
+
+    /// ClickHouse client pretty tables use box-drawing characters (┌ ┬ ┐ │ └ ┘, ─).
+    nonisolated static func clickhouseCliTableRows(_ s: String) throws -> [[String]] {
+        let lines = windowsNewlinesToUnix(s).components(separatedBy: .newlines)
+        guard let (headerIdx, footerIdx) = clickhouseCliTableLineRange(lines) else {
+            throw TransformError(description: "ClickHouse CLI Table → CSV failed: could not find a complete ┌…┐ header and └…┘ footer block.")
+        }
+
+        let columnInfos = try parseClickHouseCliHeaderLine(lines[headerIdx])
+        let columnCount = columnInfos.count
+        guard columnCount > 0 else {
+            throw TransformError(description: "ClickHouse CLI Table → CSV failed: header did not define any columns.")
+        }
+
+        let dataLineIndices = (headerIdx + 1)..<footerIdx
+        let dataIndices = dataLineIndices.filter { clickhouseCliDataLine($0, lines: lines) }
+        guard !dataIndices.isEmpty else {
+            throw TransformError(description: "ClickHouse CLI Table → CSV failed: no data rows between header and footer.")
+        }
+
+        var result: [[String]] = [columnInfos.map(\.name)]
+        let trimBudgets = columnInfos.map(\.trailingSpaceTrim)
+        for idx in dataIndices {
+            guard let row = parseClickHouseCliDataRow(lines[idx], columnCount: columnCount, trailingSpaceTrim: trimBudgets) else {
+                throw TransformError(description: "ClickHouse CLI Table → CSV failed: a data row could not be parsed or had the wrong number of columns.")
+            }
+            result.append(row)
+        }
+
+        return result
+    }
+
+    /// Returns header and footer line indices for the first ClickHouse-style table in `lines`.
+    private nonisolated static func clickhouseCliTableLineRange(_ lines: [String]) -> (Int, Int)? {
+        guard let headerIdx = lines.firstIndex(where: { clickhouseCliIsHeaderLine($0) }) else { return nil }
+        guard let footerIdx = lines[headerIdx...].firstIndex(where: { clickhouseCliIsFooterLine($0) }),
+              footerIdx > headerIdx else { return nil }
+        return (headerIdx, footerIdx)
+    }
+
+    private nonisolated static func clickhouseCliIsHeaderLine(_ line: String) -> Bool {
+        line.contains("┌") && line.contains("┬") && line.contains("┐")
+    }
+
+    private nonisolated static func clickhouseCliIsFooterLine(_ line: String) -> Bool {
+        line.trimmingCharacters(in: .whitespaces).hasPrefix("└")
+    }
+
+    private nonisolated static func clickhouseCliDataLine(_ idx: Int, lines: [String]) -> Bool {
+        let line = lines[idx]
+        // Data rows use │; ClickHouse may use ASCII | for left-aligned string columns alongside │ elsewhere.
+        return line.contains("│") || line.contains("|")
+    }
+
+    private nonisolated static func parseClickHouseCliHeaderLine(_ line: String) throws -> [(name: String, trailingSpaceTrim: Int)] {
+        guard let iTopLeft = line.firstIndex(of: "┌"),
+              let iTopRight = line.firstIndex(of: "┐"),
+              iTopRight > iTopLeft else {
+            throw TransformError(description: "ClickHouse CLI Table → CSV failed: malformed header line (missing ┌ or ┐).")
+        }
+
+        let afterLeft = line.index(after: iTopLeft)
+        let inner = line[afterLeft..<iTopRight]
+        let segments = inner.split(separator: "┬", omittingEmptySubsequences: false).map(String.init)
+        guard !segments.isEmpty else {
+            throw TransformError(description: "ClickHouse CLI Table → CSV failed: could not split header on ┬.")
+        }
+
+        var columns: [(String, Int)] = []
+        for segment in segments {
+            var body = segment
+            while body.first == "─" {
+                body.removeFirst()
+            }
+            var trailingDashes = 0
+            while body.last == "─" {
+                body.removeLast()
+                trailingDashes += 1
+            }
+            let name = body.trimmingCharacters(in: .whitespaces)
+            guard !name.isEmpty else {
+                throw TransformError(description: "ClickHouse CLI Table → CSV failed: empty column name in header.")
+            }
+            columns.append((name, trailingDashes))
+        }
+        return columns
+    }
+
+    /// First column boundary: Unicode box `│` or ASCII `|` (PrettyCompact uses `│` for numbers and often `|` for left-aligned strings).
+    private nonisolated static func clickhouseCliFirstColumnDelimiterIndex(_ line: String) -> String.Index? {
+        let idxBox = line.firstIndex(of: "│")
+        let idxAscii = line.firstIndex(of: "|")
+        switch (idxBox, idxAscii) {
+        case let (a?, b?): return min(a, b)
+        case let (a?, nil): return a
+        case let (nil, b?): return b
+        case (nil, nil): return nil
+        }
+    }
+
+    private nonisolated static func parseClickHouseCliDataRow(
+        _ line: String,
+        columnCount: Int,
+        trailingSpaceTrim: [Int]
+    ) -> [String]? {
+        guard let pipeIdx = clickhouseCliFirstColumnDelimiterIndex(line) else { return nil }
+        // Normalize so every column is split on U+2502; avoids merged cells when ClickHouse mixes │ and |.
+        let slice = String(line[pipeIdx...]).replacingOccurrences(of: "|", with: "│")
+        let rawParts = slice.split(separator: "│", omittingEmptySubsequences: false).map(String.init)
+        guard rawParts.count >= 2 else { return nil }
+        var cells = Array(rawParts.dropFirst())
+        if cells.last.map({ $0.isEmpty }) == true {
+            cells.removeLast()
+        }
+        guard cells.count == columnCount else { return nil }
+        return zip(cells, trailingSpaceTrim).map { raw, budget in
+            let leadingTrimmed = String(raw.drop(while: { $0.isWhitespace }))
+            let budgetTrimmed = trimTrailingASCIISpaces(leadingTrimmed, maxCount: budget)
+            // Left-aligned string columns often pad past the header’s trailing ─ hint; strip remaining table padding.
+            return trimTrailingWhitespace(budgetTrimmed)
+        }
+    }
+
+    private nonisolated static func trimTrailingWhitespace(_ s: String) -> String {
+        String(s.reversed().drop(while: { $0.isWhitespace }).reversed())
+    }
+
+    private nonisolated static func trimTrailingASCIISpaces(_ s: String, maxCount: Int) -> String {
+        guard maxCount > 0 else { return s }
+        var chars = Array(s)
+        var removed = 0
+        while removed < maxCount, let c = chars.last, c == " " {
+            chars.removeLast()
+            removed += 1
+        }
+        return String(chars)
     }
 
     private nonisolated static func isMySQLCliTableBorder(_ line: String) -> Bool {

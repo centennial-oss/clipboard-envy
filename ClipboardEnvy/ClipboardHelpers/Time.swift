@@ -114,21 +114,33 @@ enum TimeFormat {
         return nil
     }
 
+    /// Unix timestamps (seconds) considered plausible for epoch detection: roughly **now − 25 years** through **now + 10 years**.
+    static func plausibleEpochIntervalSince1970() -> ClosedRange<Double> {
+        let now = Date()
+        let cal = Calendar(identifier: .gregorian)
+        guard let lower = cal.date(byAdding: .year, value: -25, to: now),
+              let upper = cal.date(byAdding: .year, value: 10, to: now) else {
+            return (-Double.greatestFiniteMagnitude)...Double.greatestFiniteMagnitude
+        }
+        return lower.timeIntervalSince1970...upper.timeIntervalSince1970
+    }
+
     static func parseEpochSeconds(_ s: String) -> Date? {
+        let range = plausibleEpochIntervalSince1970()
         guard let value = Double(s),
-              value >= -62135596800,
-              value <= 253402300799,
+              range.contains(value),
               !s.contains(".") || s.split(separator: ".").count == 2 else { return nil }
         if s.count > 10 && !s.contains(".") { return nil }
         return Date(timeIntervalSince1970: value)
     }
 
     static func parseEpochMilliseconds(_ s: String) -> Date? {
+        let range = plausibleEpochIntervalSince1970()
         guard let value = Int64(s),
               s.count >= 13, s.count <= 14,
               !s.contains(".") else { return nil }
         let seconds = Double(value) / 1000.0
-        guard seconds >= -62135596800, seconds <= 253402300799 else { return nil }
+        guard range.contains(seconds) else { return nil }
         return Date(timeIntervalSince1970: seconds)
     }
 

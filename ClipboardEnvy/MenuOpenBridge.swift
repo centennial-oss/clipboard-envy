@@ -543,6 +543,7 @@ enum MenuOpenBridge {
 
         let mysqlVisibility = context.showsMySQLSectionWithoutOption
         let psqlVisibility = context.showsPsqlSectionWithoutOption
+        let clickhouseVisibility = context.showsClickHouseSectionWithoutOption
         let sqliteVisibility = context.showsSQLite3SectionWithoutOption
         for item in menu.items {
             let title = TransformMenuTitles.stripSparkleSuffix(item.title)
@@ -550,6 +551,8 @@ enum MenuOpenBridge {
                 item.isHidden = !mysqlVisibility
             } else if title == TransformMenuTitles.Section.psql.rawValue {
                 item.isHidden = !psqlVisibility
+            } else if title == TransformMenuTitles.Section.clickhouse.rawValue {
+                item.isHidden = !clickhouseVisibility
             } else if title == TransformMenuTitles.Section.sqlite3.rawValue {
                 item.isHidden = !sqliteVisibility
             }
@@ -628,16 +631,19 @@ enum MenuOpenBridge {
         if !shouldShowAll && context.hasDatabaseCLITableContext {
             let showMySQL = context.showsMySQLSectionWithoutOption
             let showPsql = context.showsPsqlSectionWithoutOption
+            let showClickHouse = context.showsClickHouseSectionWithoutOption
             let showSqlite = context.showsSQLite3SectionWithoutOption
 
             applyVisibility(ofSection: .mysql, in: databaseMenu, isVisible: showMySQL)
             applyVisibility(ofSection: .psql, in: databaseMenu, isVisible: showPsql)
+            applyVisibility(ofSection: .clickhouse, in: databaseMenu, isVisible: showClickHouse)
             applyVisibility(ofSection: .sqlite3, in: databaseMenu, isVisible: showSqlite)
             return
         }
 
         applyVisibility(ofSection: .mysql, in: databaseMenu, isVisible: true)
         applyVisibility(ofSection: .psql, in: databaseMenu, isVisible: true)
+        applyVisibility(ofSection: .clickhouse, in: databaseMenu, isVisible: true)
         applyVisibility(ofSection: .sqlite3, in: databaseMenu, isVisible: true)
     }
 

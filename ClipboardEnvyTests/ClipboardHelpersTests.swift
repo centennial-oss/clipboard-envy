@@ -892,6 +892,56 @@ final class ClipboardHelpersTests: XCTestCase {
         }
     }
 
+    func testClickHouseCliTableToCsv() throws {
+        let input = TestData.clickhouseCLI
+        let expected = """
+        time,group_id,role_id,config_id,value,str_col
+        2025-07-29 19:10:05,17,1,3,2,banana
+        2025-07-29 19:10:05,17,1,3,-68,pineapple
+        2025-07-29 19:10:05,17,1,3,9.2,blueberry
+        2025-07-29 19:10:05,17,1,3,3.47046,boysenberry
+        2025-07-29 19:10:05,17,1,3,40.12,durian
+        2025-07-29 19:10:05,17,1,3,21.6,sweet potato
+        2025-07-29 19:10:05,17,1,3,987.13001,pumpkin
+        2025-07-29 19:10:05,17,1,3,14.04431,dark chocolate
+        2025-07-29 19:10:05,17,1,3,5.81886,red velvet
+        2025-07-29 19:10:05,17,1,3,3718,pecan
+        """
+        XCTAssertEqual(try ClipboardTransform.clickhouseCliTableToCsv(input), expected)
+    }
+
+    func testClickHouseCliTableToCsv_withoutRowNumbers() throws {
+        let input = """
+            ┌─n─┬─v─┐
+            │ 1 │ a │
+            └───┴───┘
+        """
+        let expected = """
+        n,v
+        1,a
+        """
+        XCTAssertEqual(try ClipboardTransform.clickhouseCliTableToCsv(input), expected)
+    }
+
+    func testClickHouseCliTableToJson_infersNumericTypes() throws {
+        let input = """
+        ┌────i─┬────f─┐
+        │ 42 │ 3.5 │
+        └──────┴──────┘
+        """
+        let rows = try decodeJSONArray(ClipboardTransform.clickhouseCliTableToJson(input))
+        XCTAssertEqual(rows.count, 1)
+        XCTAssertEqual(rows[0]["i"] as? Int, 42)
+        XCTAssertEqual(rows[0]["f"] as? Double, 3.5)
+    }
+
+    func testClickHouseCliTableToCsv_invalidInputThrows() {
+        let input = "not a clickhouse table"
+        XCTAssertThrowsError(try ClipboardTransform.clickhouseCliTableToCsv(input)) { error in
+            XCTAssertTrue(String(describing: error).contains("could not find a complete"))
+        }
+    }
+
     func testSqlite3TableToCsv() throws {
         let input = """
         one      two
@@ -1467,6 +1517,22 @@ final class ClipboardHelpersTests: XCTestCase {
         let date = TimeFormat.parseEpochSeconds("1704067200")
         XCTAssertNotNil(date)
         XCTAssertEqual(Int(date!.timeIntervalSince1970), 1704067200)
+    }
+
+    func testParseEpochSeconds_rejectsSmallNumbersOutsidePlausibleWindow() {
+        XCTAssertNil(TimeFormat.parseEpochSeconds("123"))
+        XCTAssertNil(TimeFormat.parseEpochSeconds("123.45"))
+    }
+
+    func testParseEpochSeconds_acceptsNearNow() {
+        let nowSec = Int(Date().timeIntervalSince1970)
+        XCTAssertNotNil(TimeFormat.parseEpochSeconds("\(nowSec)"))
+    }
+
+    func testPlausibleEpochIntervalConsistency() {
+        let range = TimeFormat.plausibleEpochIntervalSince1970()
+        let now = Date().timeIntervalSince1970
+        XCTAssertTrue(range.contains(now))
     }
 
     func testParseEpochMilliseconds() {
@@ -2229,6 +2295,95 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertEqual(analysis["Integer Value"], "170")
     }
 
+    func testAnalyzer_hexadecimal_accepts0xPrefix() {
+        let analysis = ClipboardAnalyzer.analyze("0xDEADBEEF")
+        XCTAssertEqual(analysis.dataType, .hexadecimal)
+        XCTAssertEqual(analysis["Byte Count"], "4")
+    }
+
+    func testAnalyzer_binaryValue_accepts0bPrefixHelloPattern() {
+        let content = "0b1001000 01100101 01101100 01101100 01101111"
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .binaryValue)
+        XCTAssertEqual(analysis["Hex Data"], "48 65 6C 6C 6F")
+        XCTAssertEqual(analysis["ASCII Data"], "Hello")
+    }
+
+    func testAnalyzer_smallIntegerClassifiedAsIntegerNotTime() {
+        let analysis = ClipboardAnalyzer.analyze("123")
+        XCTAssertEqual(analysis.dataType, .integer)
+        XCTAssertNil(analysis["Local"])
+    }
+
+    func testAnalyzer_decimalPlainNotEpoch() {
+        let analysis = ClipboardAnalyzer.analyze("123.45")
+        XCTAssertEqual(analysis.dataType, .decimal)
+        XCTAssertNotNil(analysis["Reciprocal"])
+    }
+
+    func testAnalyzer_integerAnalysis_prettifiedHexBinaryAndPowers() {
+        let analysis = ClipboardAnalyzer.analyze("2048")
+        XCTAssertEqual(analysis.dataType, .integer)
+        XCTAssertEqual(analysis["Prettified"], "2,048")
+        XCTAssertEqual(analysis["Hex"], "0x800")
+        XCTAssertEqual(analysis["Binary"], "100000000000")
+        XCTAssertEqual(analysis["Squared"], "4,194,304")
+        XCTAssertNotNil(analysis["Square Root"])
+        XCTAssertNotNil(analysis["Cube Root"])
+        XCTAssertNotNil(analysis["Reciprocal"])
+    }
+
+    func testAnalyzer_integerSquaredOmittedWhenExceedsInt64() {
+        // 3037000500² (and cube) exceed Int64.max; those rows are omitted.
+        let analysis = ClipboardAnalyzer.analyze("3037000500")
+        XCTAssertEqual(analysis.dataType, .integer)
+        XCTAssertNil(analysis["Squared"])
+        XCTAssertNil(analysis["Cubed"])
+    }
+
+    func testAnalyzer_decimalPrettified_truncatesFractionalPerSignificantDigitRule() {
+        let analysis = ClipboardAnalyzer.analyze("2388.000000000200123203838")
+        XCTAssertEqual(analysis.dataType, .decimal)
+        XCTAssertEqual(analysis["Prettified"], "2,388.00000000020012")
+    }
+
+    func testAnalyzer_decimalReciprocal_respectsFractionalDisplayRule() {
+        let inv = ClipboardAnalyzer.analyze("0.3")
+        XCTAssertEqual(inv.dataType, .decimal)
+        XCTAssertEqual(inv["Reciprocal"], "3.33333")
+    }
+
+    func testAnalyzer_integerReciprocal_usesDecimalFractionalTruncation() {
+        let analysis = ClipboardAnalyzer.analyze("3")
+        XCTAssertEqual(analysis.dataType, .integer)
+        XCTAssertEqual(analysis["Reciprocal"], "0.33333")
+    }
+
+    func testAnalyzer_integerZeroOmitsReciprocal() {
+        let analysis = ClipboardAnalyzer.analyze("0")
+        XCTAssertEqual(analysis.dataType, .integer)
+        XCTAssertNil(analysis["Reciprocal"])
+        XCTAssertNil(analysis["Prettified"])
+    }
+
+    func testAnalyzer_decimalFractionalOneThird() {
+        let analysis = ClipboardAnalyzer.analyze("1.3333333")
+        XCTAssertEqual(analysis.dataType, .decimal)
+        XCTAssertTrue(analysis["Fractional"]?.contains("1/3") ?? false)
+    }
+
+    func testAnalyzer_decimalPrettifiedAboveThousand() {
+        let analysis = ClipboardAnalyzer.analyze("12345.67")
+        XCTAssertEqual(analysis.dataType, .decimal)
+        XCTAssertEqual(analysis["Prettified"], "12,345.67")
+    }
+
+    func testAnalyzer_binaryPrefixIntegerBitsNonSeries() {
+        let analysis = ClipboardAnalyzer.analyze("0b1010")
+        XCTAssertEqual(analysis.dataType, .binaryValue)
+        XCTAssertEqual(analysis["Integer Value"], "10")
+    }
+
     // MARK: - Testdata File Analysis Tests
 
     func testAnalyzer_csvFile() throws {
@@ -2352,12 +2507,14 @@ final class ClipboardHelpersTests: XCTestCase {
         let analysis = ClipboardAnalyzer.analyze(content, menuLabelMaxChars: 36)
         XCTAssertEqual(analysis.dataType, .generalText)
         XCTAssertEqual(analysis.previewLines, ["alpha", "beta"])
+        XCTAssertFalse(analysis.previewHasAdditionalLines)
     }
 
     func testAnalyzer_displayPreview_atMostFiveLines() {
         let content = (1...8).map { "line\($0)" }.joined(separator: "\n")
         let analysis = ClipboardAnalyzer.analyze(content, menuLabelMaxChars: 36)
         XCTAssertEqual(analysis.previewLines, ["line1", "line2", "line3", "line4", "line5"])
+        XCTAssertTrue(analysis.previewHasAdditionalLines)
     }
 
     func testAnalyzer_displayPreview_truncatesWithEllipsis() {
@@ -2372,6 +2529,7 @@ final class ClipboardHelpersTests: XCTestCase {
         let content = "a\nb\nc\nd\ne\nf"
         let analysis = ClipboardAnalyzer.analyze(content, clipboardPreviewMaxLines: 2)
         XCTAssertEqual(analysis.previewLines, ["a", "b"])
+        XCTAssertTrue(analysis.previewHasAdditionalLines)
     }
 
     func testAnalyzer_displayPreview_stripsCommonLeadingSpaces() {
@@ -2414,6 +2572,7 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertTrue(analysis.previewLines.contains { $0.hasPrefix("name:") })
         XCTAssertTrue(analysis.previewLines.contains { $0.hasPrefix("admin:") })
         XCTAssertTrue(analysis.previewLines.contains { $0.hasPrefix("iat:") })
+        XCTAssertFalse(analysis.previewHasAdditionalLines)
     }
 
     func testAnalyzer_mysqlCliFile() throws {
@@ -2439,6 +2598,15 @@ final class ClipboardHelpersTests: XCTestCase {
         XCTAssertEqual(analysis.dataType, .databaseCLITable)
         XCTAssertEqual(analysis.databaseFormat, "sqlite3")
         XCTAssertEqual(analysis["Columns"], "5")
+    }
+
+    func testAnalyzer_clickHouseCliFile() throws {
+        let content = try readTestdata("sample-clickhouse-cli.txt")
+        let analysis = ClipboardAnalyzer.analyze(content)
+        XCTAssertEqual(analysis.dataType, .databaseCLITable)
+        XCTAssertEqual(analysis.databaseFormat, "ClickHouse CLI")
+        XCTAssertEqual(analysis["Columns"], "6")
+        XCTAssertEqual(analysis["Data Rows"], "10")
     }
 
     func testAnalyzer_zeroWidthCharactersMetrics_fromFile() throws {
@@ -2482,6 +2650,14 @@ final class ClipboardHelpersTests: XCTestCase {
         let csv = try ClipboardTransform.sqlite3TableToCsv(content)
         XCTAssertTrue(csv.contains("id,name,department,hire_date,active"))
         XCTAssertTrue(csv.contains("Alice Johnson"))
+    }
+
+    func testTransform_clickhouseCliToCsv() throws {
+        let content = try readTestdata("sample-clickhouse-cli.txt")
+        let csv = try ClipboardTransform.clickhouseCliTableToCsv(content)
+        XCTAssertTrue(csv.contains("time,group_id,role_id,config_id,value,str_col"))
+        XCTAssertTrue(csv.contains("2025-07-29 19:10:05,17,1,3,3.47046,boysenberry"))
+        XCTAssertTrue(csv.contains("2025-07-29 19:10:05,17,1,3,21.6,sweet potato"))
     }
 
     func testTransform_csvToJson() throws {

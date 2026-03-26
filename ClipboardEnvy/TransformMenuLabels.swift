@@ -23,6 +23,7 @@ enum TransformMenuTitles {
         case yaml = "YAML"
         case mysql = "mysql"
         case psql = "psql"
+        case clickhouse = "ClickHouse CLI"
         case sqlite3 = "sqlite3"
         case urls = "Extract"
         case fixedWidthTable = "Fixed-Width Table"
@@ -112,6 +113,7 @@ struct TransformMenuLabelsContext {
     let showColumnsSection: Bool
     let showsMySQLSectionWithoutOption: Bool
     let showsPsqlSectionWithoutOption: Bool
+    let showsClickHouseSectionWithoutOption: Bool
     let showsSQLite3SectionWithoutOption: Bool
     let hasDatabaseCLITableContext: Bool
 }
