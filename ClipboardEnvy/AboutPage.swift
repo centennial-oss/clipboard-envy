@@ -41,7 +41,7 @@ struct AboutClipboardEnvyView: View {
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
             
-            Label("\(BuildInfo.appName) was vibecoded with Claude, ChatGPT & Cursor.\nIt is completely free and open source for you to enjoy.", systemImage: "heart")
+            Label("\(BuildInfo.appName) was created with AI assistance using Claude, ChatGPT & Cursor. It is completely free and open source for you to enjoy.", systemImage: "heart")
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .lineSpacing(4)

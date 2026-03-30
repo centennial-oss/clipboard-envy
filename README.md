@@ -139,8 +139,6 @@ Configure these in **Settings → Secrets and variables → Actions**:
 
 ## Contributor Disclosure
 
-Currently, the entirety of this project (application code, imagery, and documentation), save for minor edits to this README, was written 100% by Artificial Intelligence using a combination of Claude 4.x, ChatGPT 5.x, and Cursor Composer 1.x. In short, it was "Vibecoded." 
+This project was originally a vibecoding experiment that evolved into something bigger. Much of it (including original application code, imagery, and documentation) was created by Artificial Intelligence using a combination of Claude, ChatGPT, and Cursor Composer. While AI Agents are still used, humans also contribute directly to the codebase. All contributions are well-tested and merged only after being reviewed and approved by humans who fully understand and take responsibility for the contribution.
 
 While we welcome Pull Requests and other contributions from other humans (including AI-generated code), we do not accept contributions from AI bots. A human must review, understand, and sign off on all commits. Please file an issue to discuss any proposed feature before working on it.
-
-When humans start contributing their own code to the project, we will update this disclosure accordingly.
