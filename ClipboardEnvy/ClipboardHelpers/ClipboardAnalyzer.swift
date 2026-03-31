@@ -1373,7 +1373,7 @@ nonisolated fileprivate enum ClipboardNumberAnalysis {
     /// Decimal clipboard values: cap fractional length at ``decimalMaxFractionDigits``, and keep from the start of the fraction through (first non-zero + next 4 digits), e.g. `2388.000000000200123…` → `2388.00000000020012`.
     private static func applyDecimalFractionalRules(_ raw: String) -> String {
         let t = raw.trimmingCharacters(in: .whitespaces)
-        guard let dot = t.firstIndex(of: ".") else { return t }
+        guard t.contains(".") else { return t }
         let negative = t.hasPrefix("-")
         let unsigned = negative ? String(t.dropFirst()) : t
         guard let udot = unsigned.firstIndex(of: ".") else { return t }
