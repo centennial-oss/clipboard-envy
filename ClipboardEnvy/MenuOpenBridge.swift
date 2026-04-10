@@ -30,6 +30,7 @@ enum MenuOpenBridge {
     private static var optionMonitors: [Any] = []
     private static var optionPollTimer: Timer?
     private static var lastOptionVisibility: Bool?
+    private static var lastShiftVisibility: Bool?
     private static let testDataMenuTitle = TransformMenuTitles.testData
     private static let managedTransformSubmenuKeys = TransformMenuTitles.managedSubmenuKeys
     private static var transformSubmenusVisibleWithoutOption: Set<String> = []
@@ -75,6 +76,7 @@ enum MenuOpenBridge {
         applyTransformOverrides(in: menu, shouldShowAll: isOptionPressed)
 
         lastOptionVisibility = isOptionPressed
+        lastShiftVisibility = NSEvent.modifierFlags.contains(.shift)
         stopOptionPolling()
         stopOptionMonitor()
         startOptionPolling()
@@ -93,6 +95,7 @@ enum MenuOpenBridge {
         transformMenuLabelsContext = nil
         clearShowAllOverrideSnapshot()
         lastOptionVisibility = nil
+        lastShiftVisibility = nil
         trackingMenu = nil
     }
 
@@ -133,10 +136,12 @@ enum MenuOpenBridge {
             Task { @MainActor in
                 guard let trackedMenu = trackingMenu else { return }
                 let isOptionPressed = NSEvent.modifierFlags.contains(.option)
-                if isOptionPressed != lastOptionVisibility {
+                let isShiftPressed = NSEvent.modifierFlags.contains(.shift)
+                if isOptionPressed != lastOptionVisibility || isShiftPressed != lastShiftVisibility {
                     lastOptionVisibility = isOptionPressed
+                    lastShiftVisibility = isShiftPressed
+                    applyTransformOverrides(in: trackedMenu, shouldShowAll: isOptionPressed)
                 }
-                applyTransformOverrides(in: trackedMenu, shouldShowAll: isOptionPressed)
             }
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -150,11 +155,13 @@ enum MenuOpenBridge {
             Task { @MainActor in
                 guard trackingMenu != nil else { return }
                 let isOptionPressed = event.modifierFlags.contains(.option)
-                if isOptionPressed != lastOptionVisibility {
+                let isShiftPressed = event.modifierFlags.contains(.shift)
+                if isOptionPressed != lastOptionVisibility || isShiftPressed != lastShiftVisibility {
                     lastOptionVisibility = isOptionPressed
-                }
-                if let trackedMenu = trackingMenu {
-                    applyTransformOverrides(in: trackedMenu, shouldShowAll: isOptionPressed)
+                    lastShiftVisibility = isShiftPressed
+                    if let trackedMenu = trackingMenu {
+                        applyTransformOverrides(in: trackedMenu, shouldShowAll: isOptionPressed)
+                    }
                 }
             }
             return event
@@ -176,6 +183,7 @@ enum MenuOpenBridge {
 
     private static func stopOptionMonitor() {
         lastOptionVisibility = nil
+        lastShiftVisibility = nil
         for monitor in optionMonitors {
             NSEvent.removeMonitor(monitor)
         }

@@ -1124,15 +1124,74 @@ struct MenuBarView: View {
                 }
                 if showColumnsSection {
                     Divider()
-                        // ForEach(Array(csvColumnHeaders.enumerated().prefix(26)), id: \.offset) { columnIndex, columnName in
                     Section("Columns") {
-                        Menu("Test 2") {
-                            Button("Test Item") { stripEmptyColumns() }
+                        ForEach(Array(csvColumnHeaders.enumerated().prefix(26)), id: \.offset) { columnIndex, columnName in
+                            Menu(columnName.isEmpty ? "Column \(columnIndex + 1)" : columnName) {
+                                // Sort button
+                                Button("Sort By") {
+                                    sortByColumn(columnIndex: columnIndex)
+                                }
+                                Divider()
+                                // Remove button
+                                Button("Remove") {
+                                    removeColumn(columnIndex: columnIndex)
+                                }
+                                .disabled(csvColumnHeaders.count <= 1)
+                                // Extract submenu
+                                Divider()
+                                Menu("Extract") {
+                                    Button("This Column") {
+                                        extractColumns(fromIndex: columnIndex, toIndex: columnIndex)
+                                    }
+                                    let columnsAfter = Array(csvColumnHeaders.enumerated().dropFirst(columnIndex + 1).prefix(25))
+                                    if !columnsAfter.isEmpty {
+                                        Section("Through") {
+                                            ForEach(columnsAfter, id: \.offset) { targetIndex, targetName in
+                                                Button(targetName.isEmpty ? "Column \(targetIndex + 1)" : targetName) {
+                                                    extractColumns(fromIndex: columnIndex, toIndex: targetIndex)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                // Swap submenu
+                                Menu("Swap") {
+                                    ForEach(Array(csvColumnHeaders.enumerated().prefix(26)), id: \.offset) { targetIndex, targetName in
+                                        if targetIndex != columnIndex {
+                                            Button(targetName.isEmpty ? "Column \(targetIndex + 1)" : targetName) {
+                                                swapColumns(indexA: columnIndex, indexB: targetIndex)
+                                            }
+                                        }
+                                    }
+                                }
+                                // Move submenu
+                                Menu("Move") {
+                                    Button("To the Start") {
+                                        moveColumnToStart(fromIndex: columnIndex)
+                                    }
+                                    .disabled(columnIndex == 0)
+                                    Button("To the End") {
+                                        moveColumnToEnd(fromIndex: columnIndex)
+                                    }
+                                    .disabled(columnIndex == csvColumnHeaders.count - 1)
+                                    let validBeforeColumns = csvColumnHeaders.enumerated().filter { targetIndex, _ in
+                                        targetIndex != 0 &&
+                                        targetIndex != columnIndex &&
+                                        targetIndex != columnIndex + 1
+                                    }
+                                    if !validBeforeColumns.isEmpty {
+                                        Section("Before") {
+                                            ForEach(Array(validBeforeColumns.prefix(26)), id: \.offset) { targetIndex, targetName in
+                                                Button(targetName.isEmpty ? "Column \(targetIndex + 1)" : targetName) {
+                                                    moveColumnBefore(fromIndex: columnIndex, beforeIndex: targetIndex)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
-                        Button("Test Item") { stripEmptyColumns() }
                     }
-
-                        // }
                 }
             }
             Menu(databaseCLIMenuLabel) {
