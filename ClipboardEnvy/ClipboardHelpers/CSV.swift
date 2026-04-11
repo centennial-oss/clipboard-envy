@@ -488,7 +488,7 @@ extension ClipboardTransform {
         let headerRow = rows[0]
         let dataRows = Array(rows.dropFirst())
 
-        let sortedData = dataRows.enumerated().sorted { (a, b) in
+        let sortedData = dataRows.enumerated().sorted { a, b in
             let valueA = columnIndex < a.element.count ? a.element[columnIndex] : ""
             let valueB = columnIndex < b.element.count ? b.element[columnIndex] : ""
 

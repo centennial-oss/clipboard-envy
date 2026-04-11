@@ -80,7 +80,13 @@ struct EditorWindowRoot: View {
 }
 
 #Preview {
-    let container = try! ModelContainer(for: Snippet.self, configurations: .init(isStoredInMemoryOnly: true))
+    let container: ModelContainer = {
+        do {
+            return try ModelContainer(for: Snippet.self, configurations: .init(isStoredInMemoryOnly: true))
+        } catch {
+            fatalError("Preview ModelContainer failed: \(error)")
+        }
+    }()
     EditorWindowRoot()
         .environmentObject(EditorStore())
         .environmentObject(SnippetsStore(container: container))

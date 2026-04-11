@@ -1,4 +1,4 @@
-.PHONY: build build-release-unsigned generate-appicons lint test clean generate-build-info
+.PHONY: build build-release-unsigned generate-appicons lint lint-fix-safe test clean generate-build-info
 
 # SwiftLint: https://github.com/realm/SwiftLint — `brew install swiftlint`
 SWIFTLINT ?= $(shell command -v swiftlint 2>/dev/null)
@@ -8,7 +8,22 @@ lint:
 		echo "SwiftLint not found. Install with: brew install swiftlint" >&2; \
 		exit 1; \
 	fi
-	@"$(SWIFTLINT)" lint
+	@"$(SWIFTLINT)" lint --strict
+
+# Autocorrect only low-risk rules (whitespace / file hygiene). Still review `git diff` and run tests.
+# Optional: pass paths, e.g. `make lint-fix-safe FIX_PATHS="ClipboardEnvy/Foo.swift"`
+FIX_PATHS ?= ClipboardEnvy ClipboardEnvyTests scripts
+lint-fix-safe:
+	@if [ -z "$(SWIFTLINT)" ]; then \
+		echo "SwiftLint not found. Install with: brew install swiftlint" >&2; \
+		exit 1; \
+	fi
+	@"$(SWIFTLINT)" lint --fix \
+		--only-rule trailing_whitespace \
+		--only-rule trailing_newline \
+		--only-rule leading_whitespace \
+		--only-rule trailing_semicolon \
+		$(FIX_PATHS)
 
 clean:
 	@rm -rf build dist ; rm -rf ~/Library/Developer/Xcode/DerivedData/ClipboardEnvy-*
