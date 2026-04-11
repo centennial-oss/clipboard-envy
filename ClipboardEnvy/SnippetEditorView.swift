@@ -97,7 +97,7 @@ struct SnippetEditorView: View {
                     .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .buttonHoverBrightness()
                 if let onSaveAndSetClipboard {
-                    Button("Save Snippet + Set Clipboard") {
+                    Button("Save + Set Clipboard") {
                         onSaveAndSetClipboard(text, trimmedTitle())
                     }
                         .buttonStyle(.bordered)
