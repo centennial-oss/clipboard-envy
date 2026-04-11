@@ -166,7 +166,7 @@ enum TimeFormat {
             "yyyy-MM-dd'T'HH:mm:ssXXX",
             "yyyy-MM-dd'T'HH:mm:ssZ",
             "yyyy-MM-dd'T'HH:mm:ss.SSSzzz",
-            "yyyy-MM-dd'T'HH:mm:sszzz",
+            "yyyy-MM-dd'T'HH:mm:sszzz"
         ]
         for pattern in patterns {
             let f = DateFormatter()
@@ -182,7 +182,7 @@ enum TimeFormat {
     private static let sqlDateTimeFormatters: [DateFormatter] = {
         let patterns = [
             "yyyy-MM-dd HH:mm:ss.SSS",
-            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss"
         ]
         return patterns.map { pattern in
             let f = DateFormatter()
@@ -232,7 +232,7 @@ enum TimeFormat {
             let fourDigitYearPatterns = [
                 "yyyy/MM/dd HH:mm:ss",
                 "yyyy/MM/dd/HH",
-                "yyyy/MM/dd",
+                "yyyy/MM/dd"
             ]
             for pattern in fourDigitYearPatterns {
                 let f = DateFormatter()

@@ -484,10 +484,8 @@ enum MenuOpenBridge {
         ]
         applyVisibility(visibility, in: menu)
 
-        for item in menu.items {
-            if TransformMenuTitles.stripSparkleSuffix(item.title) == TransformMenuTitles.Section.urls.rawValue {
-                item.isHidden = !context.showShowURLExtractSection
-            }
+        for item in menu.items where TransformMenuTitles.stripSparkleSuffix(item.title) == TransformMenuTitles.Section.urls.rawValue {
+            item.isHidden = !context.showShowURLExtractSection
         }
         if let stripItem = menu.items.first(where: { $0.title == "Strip user:pass" || $0.title == "Strip user" }) {
             stripItem.title = context.showURLExtractCredentials ? "Strip user:pass" : "Strip user"

@@ -457,8 +457,9 @@ enum ClipboardAnalyzer {
             }) else { return nil }
             guard let bytes = binaryDelimitedPartsToBytes(parts) else { return nil }
             analysis.set("Hex Data", formatBinaryBytesAsHexSpaced(bytes))
-            if bytes.allSatisfy({ (32...126).contains($0) }) {
-                analysis.set("ASCII Data", String(decoding: bytes, as: UTF8.self))
+            if bytes.allSatisfy({ (32...126).contains($0) }),
+               let ascii = String(bytes: bytes, encoding: .utf8) {
+                analysis.set("ASCII Data", ascii)
             }
             return analysis
         }
@@ -471,8 +472,9 @@ enum ClipboardAnalyzer {
         if bitCount >= 16, bitCount.isMultiple(of: 8) {
             guard let bytes = binaryContiguousToBytes(bitPayload) else { return nil }
             analysis.set("Hex Data", formatBinaryBytesAsHexSpaced(bytes))
-            if bytes.allSatisfy({ (32...126).contains($0) }) {
-                analysis.set("ASCII Data", String(decoding: bytes, as: UTF8.self))
+            if bytes.allSatisfy({ (32...126).contains($0) }),
+               let ascii = String(bytes: bytes, encoding: .utf8) {
+                analysis.set("ASCII Data", ascii)
             }
             return analysis
         }
@@ -569,7 +571,7 @@ enum ClipboardAnalyzer {
         guard trimmed.count >= 4,
               !trimmed.contains("+"),
               !trimmed.contains("/"),
-              (trimmed.contains("-") || trimmed.contains("_")),
+              trimmed.contains("-") || trimmed.contains("_"),
               isValidBase64URLChars(trimmed) else { return nil }
 
         guard let decoded = base64URLDecodeToData(trimmed),
@@ -1129,7 +1131,7 @@ enum ClipboardAnalyzer {
             ("Process List", ["PID", "COMMAND"]),
             ("Netstat", ["PROTO", "RECV-Q", "SEND-Q", "LOCAL ADDRESS", "FOREIGN ADDRESS"]),
             // Open Files List: allow extra columns (e.g. TID/TASKCMD) between PID and USER.
-            ("Open Files List", ["COMMAND", "PID", "USER", "FD", "TYPE", "DEVICE", "SIZE/OFF", "NODE NAME"]),
+            ("Open Files List", ["COMMAND", "PID", "USER", "FD", "TYPE", "DEVICE", "SIZE/OFF", "NODE NAME"])
         ]
 
         var bestMatchName: String?
@@ -1204,7 +1206,7 @@ enum ClipboardAnalyzer {
 // MARK: - Numeric clipboard analysis (file scope avoids Swift 6 main-actor isolation on nested types)
 
 /// Extensible analysis for ``ClipboardDataType/integer`` and ``ClipboardDataType/decimal``; append steps to the flavor pipelines.
-nonisolated fileprivate enum ClipboardNumberAnalysis {
+nonisolated private enum ClipboardNumberAnalysis {
     /// Grouping separator for thousands in ``Prettified`` (future: localization hook).
     static let thousandsSeparator = ","
 
@@ -1226,18 +1228,18 @@ nonisolated fileprivate enum ClipboardNumberAnalysis {
         appendCubed,
         appendSquareRoot,
         appendCubeRoot,
-        appendReciprocal,
+        appendReciprocal
     ]
 
     private static let integerPipeline: [Step] = [
         appendPrettifiedIfNeeded,
         appendHexForInteger,
-        appendBinaryForInteger,
+        appendBinaryForInteger
     ] + sharedSteps
 
     private static let decimalPipeline: [Step] = [
         appendPrettifiedIfNeeded,
-        appendFractionalForDecimal,
+        appendFractionalForDecimal
     ] + sharedSteps
 
     static func apply(to analysis: inout ClipboardAnalysis, value: Decimal, rawInput: String, flavor: Flavor) {

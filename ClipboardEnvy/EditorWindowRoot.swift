@@ -8,7 +8,7 @@ struct EditorWindowRoot: View {
     @EnvironmentObject private var editorStore: EditorStore
     @EnvironmentObject private var snippetsStore: SnippetsStore
     @AppStorage("muteQuickSaveSounds") private var muteSounds = false
-    @State private var escapeMonitor: Any? = nil
+    @State private var escapeMonitor: Any?
 
     var body: some View {
         Group {

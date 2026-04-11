@@ -103,7 +103,7 @@ private extension View {
         title: "Replace Text",
         fields: [
             .init(label: "Find", placeholder: "e.g. foo"),
-            .init(label: "Replace with", placeholder: "e.g. bar"),
+            .init(label: "Replace with", placeholder: "e.g. bar")
         ],
         onSubmit: { _ in },
         onCancel: { }

@@ -10,7 +10,7 @@ struct AboutClipboardEnvyView: View {
     private let githubURL = URL(string: "https://github.com/centennial-oss/clipboard-envy")!
     private let appStoreReviewURL = URL(string: "https://apps.apple.com/us/app/clipboard-envy/id6759918875?action=write-review")!
     private static let windowTitle = "About \(BuildInfo.appName)"
-    @State private var escapeMonitor: Any? = nil
+    @State private var escapeMonitor: Any?
     @State private var isGitHubLinkHovered = false
     @State private var isAppStoreLinkHovered = false
 
@@ -40,7 +40,7 @@ struct AboutClipboardEnvyView: View {
                 .foregroundStyle(.secondary)
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
-            
+
             Label("\(BuildInfo.appName) was created with AI assistance using Claude, ChatGPT & Cursor. It is completely free and open source for you to enjoy.", systemImage: "heart")
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)

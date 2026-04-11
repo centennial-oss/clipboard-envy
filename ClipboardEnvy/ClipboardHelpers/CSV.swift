@@ -343,22 +343,22 @@ extension ClipboardTransform {
         if matchesExplicitJSONType(normalized, exactMatches: [
             "int", "int8", "int16", "int32", "int64", "int128", "int256",
             "uint", "uint8", "uint16", "uint32", "uint64", "uint128", "uint256",
-            "byte", "long",
+            "byte", "long"
         ], prefixMatches: []) {
             return .int
         }
         if matchesExplicitJSONType(normalized, exactMatches: [
-            "float32", "float64", "decimal", "number",
+            "float32", "float64", "decimal", "number"
         ], prefixMatches: [
-            "float32(", "float64(", "decimal(",
+            "float32(", "float64(", "decimal("
         ]) {
             return .double
         }
         if matchesExplicitJSONType(normalized, exactMatches: [
             "string", "date", "date32", "time", "datetime", "time64", "datetime64",
-            "uuid", "enum", "ipv4", "ipv6",
+            "uuid", "enum", "ipv4", "ipv6"
         ], prefixMatches: [
-            "varchar(",
+            "varchar("
         ]) {
             return .string
         }

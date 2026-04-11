@@ -14,7 +14,7 @@ final class CustomTransformStore: ObservableObject {
         let transform: (String, [String]) -> String
     }
 
-    @Published var pending: PendingTransform? = nil
+    @Published var pending: PendingTransform?
     /// Bumped on each new request so views re-initialize their field state.
     @Published var session: UInt = 0
 

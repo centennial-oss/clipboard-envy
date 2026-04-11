@@ -465,7 +465,7 @@ struct MenuBarView: View {
             Snippet(body: "Jump Server FQDN", title: nil, timestamp: Date(timeInterval: 3, since: t0)),
             Snippet(body: "John's PubKey", title: nil, timestamp: Date(timeInterval: 4, since: t0)),
             Snippet(body: "Interview ?s Markdown: AWS Lambda", title: nil, timestamp: Date(timeInterval: 5, since: t0)),
-            Snippet(body: "https://github.com/org/repo/issues", title: nil, timestamp: Date(timeInterval: 6, since: t0)),
+            Snippet(body: "https://github.com/org/repo/issues", title: nil, timestamp: Date(timeInterval: 6, since: t0))
         ]
     }()
     #endif
@@ -523,7 +523,7 @@ struct MenuBarView: View {
             }
 
             Divider()
-            
+
             if clipboardAnalysis.dataType == .jwt {
                 Button(TransformMenuTitles.appendSparkleIf("Decode JWT Payload", condition: true)) { transformClipboardIfValid(ClipboardTransform.jwtDecode) }
             }
@@ -602,7 +602,7 @@ struct MenuBarView: View {
                     Button("Spaces") {
                         transformClipboard { ClipboardTransform.removeSubstring($0, target: " ") }
                     }
-                    if (shouldShowAll || hasZeroWidthCharacters) {
+                    if shouldShowAll || hasZeroWidthCharacters {
                         Button(TransformMenuTitles.appendSparkleIf("Zero-width Chars", condition: hasZeroWidthCharacters)) {
                             transformClipboard(ClipboardTransform.removeZeroWidthCharacters)
                         }
@@ -707,7 +707,7 @@ struct MenuBarView: View {
                             title: "Replace Text",
                             fields: [
                                 .init(label: "Find", placeholder: "e.g. foo"),
-                                .init(label: "Replace with", placeholder: "e.g. bar"),
+                                .init(label: "Replace with", placeholder: "e.g. bar")
                             ],
                             transform: { text, values in
                                 ClipboardTransform.swapSubstrings(text, from: values[0], to: values[1])
@@ -1118,7 +1118,7 @@ struct MenuBarView: View {
                     Button("Table → JSON (typed)") { transformClipboardIfValid(ClipboardTransform.fixedWidthTableToJson) }
                     Button("Table → JSON (strings)") { transformClipboardIfValid(ClipboardTransform.fixedWidthTableToJsonStrings) }
                 }
-                if(showStripColumns) {
+                if showStripColumns {
                     Divider()
                     Button("Strip Empty Columns") { stripEmptyColumns() }
                 }

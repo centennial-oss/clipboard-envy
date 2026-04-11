@@ -314,7 +314,7 @@ extension ClipboardTransform {
             ("• line", "• ", ""),
             ("* line", "* ", ""),
             ("# line", "# ", ""),
-            ("// line", "// ", ""),
+            ("// line", "// ", "")
         ]
     }
 
@@ -453,7 +453,7 @@ extension ClipboardTransform {
             ("Tabs", "\t"),
             ("Pipes", "|"),
             ("Colons", ":"),
-            ("Semicolons", ";"),
+            ("Semicolons", ";")
         ]
     }
 
@@ -569,7 +569,7 @@ extension ClipboardTransform {
             "“": "\"", "”": "\"",
             "„": "\"", "‟": "\"",
             "‘": "'", "’": "'",
-            "‚": "'", "‛": "'",
+            "‚": "'", "‛": "'"
         ]
         for (from, to) in mappings {
             out = out.replacingOccurrences(of: from, with: to)
@@ -780,7 +780,7 @@ extension ClipboardTransform {
     /// Parses the overall awk command into (delimiter?, printBody).
     private nonisolated static func parseAwkCommand(_ cmd: String) -> (delimiter: String?, printBody: String) {
         var command = cmd.trimmingCharacters(in: .whitespacesAndNewlines)
-        var delimiter: String? = nil
+        var delimiter: String?
 
         // Optional -d 'x' or -d "x"
         if command.hasPrefix("-d") {
@@ -815,8 +815,8 @@ extension ClipboardTransform {
         var inQuotes = false
         var quoteChar: Character = "\0"
         var depth = 0
-        var printStart: String.Index? = nil
-        var bodyStart: String.Index? = nil
+        var printStart: String.Index?
+        var bodyStart: String.Index?
 
         var idx = s.startIndex
         while idx < s.endIndex {

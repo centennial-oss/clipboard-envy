@@ -36,7 +36,7 @@ struct ClipboardEnvyApp: App {
         UserDefaults.standard.register(defaults: [
             "Argon2MemoryKiB": 65535,
             "Argon2Iterations": 3,
-            "Argon2Parallelism": 1,
+            "Argon2Parallelism": 1
         ])
     }
 

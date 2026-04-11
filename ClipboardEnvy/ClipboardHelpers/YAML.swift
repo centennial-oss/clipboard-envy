@@ -431,9 +431,13 @@ enum YAMLHelpers {
                 }
             } else if quote == "\"" && s[i] == "\\" && s.index(after: i) < s.endIndex {
                 let next = s[s.index(after: i)]
-                if next == "\"" { result.append("\"") }
-                else if next == "\\" { result.append("\\") }
-                else { result.append(next) }
+                if next == "\"" {
+                    result.append("\"")
+                } else if next == "\\" {
+                    result.append("\\")
+                } else {
+                    result.append(next)
+                }
                 i = s.index(i, offsetBy: 2)
             } else {
                 result.append(s[i])

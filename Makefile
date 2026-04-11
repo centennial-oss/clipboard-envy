@@ -1,4 +1,14 @@
-.PHONY: build build-release-unsigned generate-appicons test clean generate-build-info
+.PHONY: build build-release-unsigned generate-appicons lint test clean generate-build-info
+
+# SwiftLint: https://github.com/realm/SwiftLint — `brew install swiftlint`
+SWIFTLINT ?= $(shell command -v swiftlint 2>/dev/null)
+
+lint:
+	@if [ -z "$(SWIFTLINT)" ]; then \
+		echo "SwiftLint not found. Install with: brew install swiftlint" >&2; \
+		exit 1; \
+	fi
+	@"$(SWIFTLINT)" lint
 
 clean:
 	@rm -rf build dist ; rm -rf ~/Library/Developer/Xcode/DerivedData/ClipboardEnvy-*
@@ -49,8 +59,8 @@ build-release-unsigned:
 	xcodebuild -scheme ClipboardEnvy -configuration Release -derivedDataPath dist/DerivedData build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 	cp -R "dist/DerivedData/Build/Products/Release/Clipboard Envy.app" dist/
 
-# Run Swift tests.
-test:
+# Run Swift tests (lint first).
+test: lint
 	mkdir -p build
 	xcodebuild test -scheme ClipboardEnvy -configuration Debug -derivedDataPath build/DerivedData -destination 'platform=macOS' CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 

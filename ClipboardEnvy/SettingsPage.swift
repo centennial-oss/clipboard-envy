@@ -332,8 +332,8 @@ struct SettingsClipboardEnvyView: View {
     private static let windowTitle = "\(BuildInfo.appName) Settings"
     @Environment(\.colorScheme) private var colorScheme
     @State private var selectedSection: SettingsSection? = .general
-    @State private var escapeMonitor: Any? = nil
-    
+    @State private var escapeMonitor: Any?
+
     private var selectedSectionBinding: Binding<SettingsSection?> {
         Binding(
             get: { selectedSection },
@@ -681,7 +681,7 @@ private struct SoundEffectsSettingsView: View {
         .init(id: "Morse", osName: "Pong"),
         .init(id: "Ping", osName: "Sonar"),
         .init(id: "Sosumi", osName: "Sonumi"),
-        .init(id: "Submarine", osName: "Submerge"),
+        .init(id: "Submarine", osName: "Submerge")
     ]
 
     private var writtenVolumeBinding: Binding<Double> {
@@ -817,8 +817,8 @@ private struct Argon2SettingsView: View {
             iterations = ud.integer(forKey: "Argon2Iterations")
             parallelism = ud.integer(forKey: "Argon2Parallelism")
         }
-        .onChange(of: memoryKiB)   { _, v in UserDefaults.standard.set(v, forKey: "Argon2MemoryKiB") }
-        .onChange(of: iterations)  { _, v in UserDefaults.standard.set(v, forKey: "Argon2Iterations") }
+        .onChange(of: memoryKiB) { _, v in UserDefaults.standard.set(v, forKey: "Argon2MemoryKiB") }
+        .onChange(of: iterations) { _, v in UserDefaults.standard.set(v, forKey: "Argon2Iterations") }
         .onChange(of: parallelism) { _, v in UserDefaults.standard.set(v, forKey: "Argon2Parallelism") }
     }
 }

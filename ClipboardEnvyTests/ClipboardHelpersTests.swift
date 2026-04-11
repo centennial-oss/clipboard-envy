@@ -1367,13 +1367,7 @@ final class ClipboardHelpersTests: XCTestCase {
 
         // Print $4: header + fourth column values; note blank for row3 (cell2d).
         let result4 = ClipboardTransform.awkPrintColumns(input, columns: [4], delimiter: "/")
-        XCTAssertEqual(result4, """
-        Column4
-        cell1d
-        
-        cell3d
-        cell4d
-        """)
+        XCTAssertEqual(result4, "Column4\ncell1d\n\ncell3d\ncell4d")
     }
 
     func testAwk_parser_whitespace_defaultDelimiter() {

@@ -1,0 +1,42 @@
+# SwiftLint: https://github.com/realm/SwiftLint
+# Run `make lint` (requires SwiftLint: `brew install swiftlint`).
+
+excluded:
+  - build
+  - dist
+  - .build
+  - ClipboardEnvy/BuildInfo.generated.swift
+
+disabled_rules:
+  # Short names are common in tight loops, parsers, and indices.
+  - identifier_name
+  # App has a few intentional `try!` sites; prefer fixing over silencing long-term.
+  - force_try
+
+line_length:
+  # Match error so long literals in fixtures do not warn; errors still cap runaway lines.
+  warning: 4000
+  error: 4000
+  ignores_urls: true
+  ignores_function_declarations: true
+  ignores_comments: true
+
+file_length:
+  warning: 4000
+  error: 4000
+
+type_body_length:
+  warning: 2500
+  error: 2500
+
+function_body_length:
+  warning: 150
+  error: 200
+
+cyclomatic_complexity:
+  warning: 25
+  error: 35
+
+large_tuple:
+  warning: 4
+  error: 6

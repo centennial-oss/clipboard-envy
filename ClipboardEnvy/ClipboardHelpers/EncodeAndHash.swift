@@ -58,7 +58,7 @@ extension ClipboardTransform {
     private nonisolated static func bcryptRandomSaltBody(length: Int) -> String {
         let alphabet = Array("./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
         return (0..<length).map { _ in
-            let idx = Int(arc4random_uniform(UInt32(alphabet.count)))
+            let idx = Int.random(in: 0..<alphabet.count)
             return String(alphabet[idx])
         }.joined()
     }
