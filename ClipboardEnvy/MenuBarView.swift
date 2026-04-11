@@ -1972,11 +1972,6 @@ struct MenuBarView: View {
     private func snippetMenu(_ snippet: Snippet) -> some View {
         Menu(snippetMenuTitle(for: snippet)) {
             Button("Copy to Clipboard") { copyToClipboard(snippet) }
-            .modifierKeyAlternate(.shift) {
-                Button("Copy to Clipboard & Paste (⌘V)") {
-                    copyToClipboard(snippet)
-                }
-            }
             if hasURL(snippet.body) {
                 Button("Open URL") { openURL(from: snippet.body) }
             }
