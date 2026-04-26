@@ -71,3 +71,9 @@ Clipboard Envy does not collect, send, or share your data. Everything stays on y
 Humans write this software with AI Assistance. All contributions are well-tested and merged only after being reviewed and approved by humans who fully understand and take responsibility for the contribution.
 
 While we welcome Pull Requests and other contributions from other humans (including AI-generated code), we do not accept contributions from AI bots. A human must review, understand, and sign off on all commits. Please file an issue to discuss any proposed feature before working on it.
+
+## Trademark Notice
+
+Clipboard Envy and its logo are trademarks of Centennial OSS, Inc.
+Use of the name and branding is not permitted for modified versions or forks without permission.
+See TRADEMARKS.md for details.
