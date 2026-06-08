@@ -58,6 +58,7 @@ struct TransformMenuLabelsContext {
     let generalText: TransformMenuLabelVariant
     let managedSubmenus: [String: TransformMenuLabelVariant]
     let showGeneralTextSplitJSONArray: Bool
+    let showGeneralTextPlainText: Bool
     let showGeneralTextZeroWidthRemove: Bool
     let showsJSONSectionWithoutOption: Bool
     let showsYAMLSectionWithoutOption: Bool

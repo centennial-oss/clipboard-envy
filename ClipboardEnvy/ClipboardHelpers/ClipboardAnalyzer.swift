@@ -19,6 +19,7 @@ enum ClipboardDataType: String, CaseIterable {
     case hexadecimal = "Hexadecimal Value"
     case integer = "Integer"
     case decimal = "Decimal"
+    case richText = "Rich Text"
     case generalText = "General Text"
 }
 
@@ -207,7 +208,12 @@ enum ClipboardAnalyzer {
     ///   - text: Clipboard string, or nil when non-text.
     ///   - menuLabelMaxChars: Max characters per preview line (same semantics as snippet menu titles); clamped to 10...64.
     ///   - clipboardPreviewMaxLines: Max non-empty preview lines in the analysis menu; clamped to 0...20.
-    static func analyze(_ text: String?, menuLabelMaxChars: Int = 36, clipboardPreviewMaxLines: Int = 5) -> ClipboardAnalysis {
+    static func analyze(
+        _ text: String?,
+        isRichTextClipboard: Bool = false,
+        menuLabelMaxChars: Int = 36,
+        clipboardPreviewMaxLines: Int = 5
+    ) -> ClipboardAnalysis {
         guard let text = text else {
             return ClipboardAnalysis(dataType: .nonText)
         }
@@ -217,7 +223,12 @@ enum ClipboardAnalyzer {
 
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            return finish(analyzeGeneralText(text), sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines)
+            return finish(
+                analyzeGeneralText(text, isRichTextClipboard: isRichTextClipboard),
+                sourceText: text,
+                maxLineLen: maxLineLen,
+                previewMaxLines: previewMaxLines
+            )
         }
 
         if let analysis = detectJWT(trimmed, original: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) { return finish(analysis, sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) }
@@ -238,7 +249,12 @@ enum ClipboardAnalyzer {
         if let analysis = detectPSV(trimmed, original: text) { return finish(analysis, sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) }
         if let analysis = detectYAML(trimmed, original: text) { return finish(analysis, sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines) }
 
-        return finish(analyzeGeneralText(text), sourceText: text, maxLineLen: maxLineLen, previewMaxLines: previewMaxLines)
+        return finish(
+            analyzeGeneralText(text, isRichTextClipboard: isRichTextClipboard),
+            sourceText: text,
+            maxLineLen: maxLineLen,
+            previewMaxLines: previewMaxLines
+        )
     }
 
     private static func finish(_ analysis: ClipboardAnalysis, sourceText: String, maxLineLen: Int, previewMaxLines: Int) -> ClipboardAnalysis {
@@ -957,8 +973,8 @@ enum ClipboardAnalyzer {
         return re.firstMatch(in: s, options: [], range: range)?.range == range
     }
 
-    private static func analyzeGeneralText(_ text: String) -> ClipboardAnalysis {
-        var analysis = ClipboardAnalysis(dataType: .generalText)
+    private static func analyzeGeneralText(_ text: String, isRichTextClipboard: Bool = false) -> ClipboardAnalysis {
+        var analysis = ClipboardAnalysis(dataType: isRichTextClipboard ? .richText : .generalText)
         addTextMetrics(to: &analysis, text: text)
         return analysis
     }

@@ -401,7 +401,8 @@ enum MenuOpenBridge {
         }
 
         let visibility: [String: Bool] = [
-            TransformMenuTitles.appendSparkleIf("Split JSON Array", condition: true): context.showGeneralTextSplitJSONArray
+            TransformMenuTitles.appendSparkleIf("Split JSON Array", condition: true): context.showGeneralTextSplitJSONArray,
+            "→ Plain Text": context.showGeneralTextPlainText,
         ]
         applyVisibility(visibility, in: menu)
     }

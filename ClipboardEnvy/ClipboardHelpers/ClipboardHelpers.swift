@@ -61,18 +61,97 @@ enum ClipboardSound {
     }
 }
 
+// MARK: - Rich text clipboard detection
+
+nonisolated enum RichTextClipboard {
+    static let richPasteboardTypes: Set<NSPasteboard.PasteboardType> = [
+        .rtf,
+        .html,
+        NSPasteboard.PasteboardType("NSAttributedString"),
+        NSPasteboard.PasteboardType("com.apple.flat-rtfd"),
+        NSPasteboard.PasteboardType("Apple HTML pasteboard type"),
+    ]
+
+    static func hasRichTextFormats(in types: [NSPasteboard.PasteboardType]) -> Bool {
+        !Set(types).isDisjoint(with: richPasteboardTypes)
+    }
+
+    static func plainText(fromRTF data: Data) -> String? {
+        guard let attributed = NSAttributedString(rtf: data, documentAttributes: nil) else { return nil }
+        return attributed.string
+    }
+
+    static func plainText(fromHTML data: Data) -> String? {
+        guard let attributed = try? NSAttributedString(
+            data: data,
+            options: [
+                .documentType: NSAttributedString.DocumentType.html,
+                .characterEncoding: String.Encoding.utf8.rawValue,
+            ],
+            documentAttributes: nil
+        ) else { return nil }
+        return attributed.string
+    }
+}
+
 // MARK: - Clipboard read/write
 
 @MainActor
 enum ClipboardIO {
+    private static let utf8PlainTextType = NSPasteboard.PasteboardType("public.utf8-plain-text")
+    private static let attributedStringType = NSPasteboard.PasteboardType("NSAttributedString")
+
     static func readString() -> String? {
         NSPasteboard.general.string(forType: .string)
+    }
+
+    static func hasRichTextFormats(pasteboard: NSPasteboard = .general) -> Bool {
+        guard let types = pasteboard.types else { return false }
+        return RichTextClipboard.hasRichTextFormats(in: types)
+    }
+
+    /// Best-effort plain text from the clipboard, including RTF/HTML fallbacks.
+    static func plainTextRepresentation(pasteboard: NSPasteboard = .general) -> String? {
+        if let string = pasteboard.string(forType: .string) {
+            return string
+        }
+        if let string = pasteboard.string(forType: utf8PlainTextType) {
+            return string
+        }
+        if let rtf = pasteboard.data(forType: .rtf),
+           let plain = RichTextClipboard.plainText(fromRTF: rtf) {
+            return plain
+        }
+        if let html = pasteboard.data(forType: .html),
+           let plain = RichTextClipboard.plainText(fromHTML: html) {
+            return plain
+        }
+        if let data = pasteboard.data(forType: attributedStringType),
+           let attributed = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSAttributedString.self, from: data) {
+            return attributed.string
+        }
+        return nil
+    }
+
+    /// True when the clipboard carries rich-text formats and a plain-text representation is available.
+    static func isRichTextClipboard(pasteboard: NSPasteboard = .general) -> Bool {
+        guard hasRichTextFormats(pasteboard: pasteboard) else { return false }
+        return plainTextRepresentation(pasteboard: pasteboard) != nil
     }
 
     @discardableResult
     static func writeString(_ string: String) -> Bool {
         NSPasteboard.general.clearContents()
         return NSPasteboard.general.setString(string, forType: .string)
+    }
+
+    /// Writes only plain-text pasteboard types so rich-text editors paste unformatted text.
+    @discardableResult
+    static func writePlainTextOnly(_ string: String) -> Bool {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.declareTypes([.string, utf8PlainTextType], owner: nil)
+        return pasteboard.setString(string, forType: .string)
     }
 }
 
@@ -113,6 +192,21 @@ enum ClipboardTransform {
             return false
         }
         guard ClipboardIO.writeString(result) else {
+            ClipboardSound.playClipboardError(muted: muted)
+            return false
+        }
+        ClipboardSound.playClipboardWritten(muted: muted)
+        return true
+    }
+
+    /// Replaces rich-text clipboard contents with plain text only.
+    @discardableResult
+    static func convertToPlainText(muted: Bool) -> Bool {
+        guard let plain = ClipboardIO.plainTextRepresentation() else {
+            ClipboardSound.playClipboardError(muted: muted)
+            return false
+        }
+        guard ClipboardIO.writePlainTextOnly(plain) else {
             ClipboardSound.playClipboardError(muted: muted)
             return false
         }

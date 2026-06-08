@@ -82,6 +82,10 @@ struct MenuBarView: View {
         clipboardAnalysis.zeroWidthCharacterCount > 0
     }
 
+    private var isRichTextClipboard: Bool {
+        clipboardAnalysis.dataType == .richText
+    }
+
     private var isJsonArray: Bool {
         clipboardAnalysis.dataType == .json && clipboardAnalysis.isArrayStructure
     }
@@ -184,7 +188,10 @@ struct MenuBarView: View {
     }
 
     private func generalTextMenuTitle(shouldShowAll _: Bool) -> String {
-        TransformMenuTitles.appendSparkleIf(TransformMenuTitles.generalText, condition: isSimpleLiteralJsonArray || hasZeroWidthCharacters)
+        TransformMenuTitles.appendSparkleIf(
+            TransformMenuTitles.generalText,
+            condition: isSimpleLiteralJsonArray || hasZeroWidthCharacters || isRichTextClipboard
+        )
     }
 
     private var jsonYAMLMenuLabel: String {
@@ -331,6 +338,7 @@ struct MenuBarView: View {
             ),
             managedSubmenus: managedLabels,
             showGeneralTextSplitJSONArray: shouldShowAll || isSimpleLiteralJsonArray,
+            showGeneralTextPlainText: shouldShowAll || isRichTextClipboard,
             showGeneralTextZeroWidthRemove: shouldShowAll || isSimpleLiteralJsonArray || hasZeroWidthCharacters,
             showsJSONSectionWithoutOption: clipboardAnalysis.dataType == .json,
             showsYAMLSectionWithoutOption: clipboardAnalysis.dataType == .yaml,
@@ -516,6 +524,11 @@ struct MenuBarView: View {
             if isUrlWithParams {
                 Button(TransformMenuTitles.appendSparkleIf("Strip URL Params", condition: true)) { transformClipboardIfValid(ClipboardTransform.stripUrlParamsIfValid) }
             }
+            if isRichTextClipboard {
+                Button(TransformMenuTitles.appendSparkleIf("→ Plain Text", condition: true)) {
+                    convertClipboardToPlainText()
+                }
+            }
             if hasCarriageReturns {
                 Button(TransformMenuTitles.appendSparkleIf("CRLF → LF (strip \\r)", condition: true)) { transformClipboard(ClipboardTransform.windowsNewlinesToUnix) }
             }
@@ -551,6 +564,12 @@ struct MenuBarView: View {
                         transformClipboardIfValid { input in
                             ClipboardTransform.simpleLiteralJsonArrayToLines(input) ?? input
                         }
+                    }
+                    Divider()
+                }
+                if shouldShowAll || isRichTextClipboard {
+                    Button(TransformMenuTitles.appendSparkleIf("→ Plain Text", condition: isRichTextClipboard)) {
+                        convertClipboardToPlainText()
                     }
                     Divider()
                 }
@@ -1650,6 +1669,11 @@ struct MenuBarView: View {
         refreshClipboardAnalysis()
     }
 
+    private func convertClipboardToPlainText() {
+        _ = ClipboardTransform.convertToPlainText(muted: muteSounds)
+        refreshClipboardAnalysis()
+    }
+
     private func refreshClipboardAnalysis() {
         refreshOptionStatus()
         let clipboardText = ClipboardIO.readString()
@@ -1663,6 +1687,7 @@ struct MenuBarView: View {
         )
         clipboardAnalysis = ClipboardAnalyzer.analyze(
             clipboardText,
+            isRichTextClipboard: ClipboardIO.isRichTextClipboard(),
             menuLabelMaxChars: menuLabelLimit,
             clipboardPreviewMaxLines: previewLineLimit
         )

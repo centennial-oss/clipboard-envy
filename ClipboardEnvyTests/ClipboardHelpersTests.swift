@@ -2809,4 +2809,39 @@ joeuser          65085   9.4  0.9 1896047824 1268672   ??  S    10:19PM  15:40.9
         XCTAssertEqual(rowsOriginal.first?["id"] as? Int, rowsRoundTrip.first?["id"] as? Int)
         XCTAssertEqual(rowsOriginal.first?["name"] as? String, rowsRoundTrip.first?["name"] as? String)
     }
+
+    // MARK: - Rich text clipboard
+
+    func testRichTextClipboard_detectsRichPasteboardTypes() {
+        XCTAssertTrue(RichTextClipboard.hasRichTextFormats(in: [.string, .rtf]))
+        XCTAssertTrue(RichTextClipboard.hasRichTextFormats(in: [.html]))
+        XCTAssertFalse(RichTextClipboard.hasRichTextFormats(in: [.string]))
+        XCTAssertFalse(RichTextClipboard.hasRichTextFormats(in: [
+            .string,
+            NSPasteboard.PasteboardType("public.utf8-plain-text"),
+        ]))
+    }
+
+    func testRichTextClipboard_plainTextFromRTF() throws {
+        let rtf = "{\\rtf1\\ansi\\b Hello\\b0 world}".data(using: .utf8)!
+        let plain = try XCTUnwrap(RichTextClipboard.plainText(fromRTF: rtf))
+        XCTAssertTrue(plain.contains("Hello"))
+        XCTAssertTrue(plain.contains("world"))
+    }
+
+    func testRichTextClipboard_plainTextFromHTML() {
+        let html = "<p><b>Hello</b> world</p>".data(using: .utf8)!
+        XCTAssertEqual(RichTextClipboard.plainText(fromHTML: html), "Hello world\n")
+    }
+
+    func testAnalyzer_richTextClipboard_reportsRichTextDataType() {
+        let analysis = ClipboardAnalyzer.analyze("Hello world", isRichTextClipboard: true)
+        XCTAssertEqual(analysis.dataType, .richText)
+        XCTAssertEqual(analysis.analysisDisplayItems.first?.value, "Rich Text")
+    }
+
+    func testAnalyzer_richTextClipboard_doesNotOverrideJSON() {
+        let analysis = ClipboardAnalyzer.analyze("{\"a\":1}", isRichTextClipboard: true)
+        XCTAssertEqual(analysis.dataType, .json)
+    }
 }
