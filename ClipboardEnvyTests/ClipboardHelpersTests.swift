@@ -2818,19 +2818,19 @@ joeuser          65085   9.4  0.9 1896047824 1268672   ??  S    10:19PM  15:40.9
         XCTAssertFalse(RichTextClipboard.hasRichTextFormats(in: [.string]))
         XCTAssertFalse(RichTextClipboard.hasRichTextFormats(in: [
             .string,
-            NSPasteboard.PasteboardType("public.utf8-plain-text"),
+            NSPasteboard.PasteboardType("public.utf8-plain-text")
         ]))
     }
 
     func testRichTextClipboard_plainTextFromRTF() throws {
-        let rtf = "{\\rtf1\\ansi\\b Hello\\b0 world}".data(using: .utf8)!
+        let rtf = Data("{\\rtf1\\ansi\\b Hello\\b0 world}".utf8)
         let plain = try XCTUnwrap(RichTextClipboard.plainText(fromRTF: rtf))
         XCTAssertTrue(plain.contains("Hello"))
         XCTAssertTrue(plain.contains("world"))
     }
 
     func testRichTextClipboard_plainTextFromHTML() {
-        let html = "<p><b>Hello</b> world</p>".data(using: .utf8)!
+        let html = Data("<p><b>Hello</b> world</p>".utf8)
         XCTAssertEqual(RichTextClipboard.plainText(fromHTML: html), "Hello world\n")
     }
 

@@ -69,7 +69,7 @@ nonisolated enum RichTextClipboard {
         .html,
         NSPasteboard.PasteboardType("NSAttributedString"),
         NSPasteboard.PasteboardType("com.apple.flat-rtfd"),
-        NSPasteboard.PasteboardType("Apple HTML pasteboard type"),
+        NSPasteboard.PasteboardType("Apple HTML pasteboard type")
     ]
 
     static func hasRichTextFormats(in types: [NSPasteboard.PasteboardType]) -> Bool {
@@ -86,7 +86,7 @@ nonisolated enum RichTextClipboard {
             data: data,
             options: [
                 .documentType: NSAttributedString.DocumentType.html,
-                .characterEncoding: String.Encoding.utf8.rawValue,
+                .characterEncoding: String.Encoding.utf8.rawValue
             ],
             documentAttributes: nil
         ) else { return nil }
